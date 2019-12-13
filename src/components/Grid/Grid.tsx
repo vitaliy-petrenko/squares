@@ -41,7 +41,7 @@ const getRandomFloatingClass = () => styles[`isFloating${Math.round(10 * Math.ra
 
 const Col: React.FC = ({ children }) => {
   const
-    [isEmpty] = useState(false),
+    [isEmpty] = useState(true),
     floatingClass = useMemo(getRandomFloatingClass, [isEmpty])
 
   return (

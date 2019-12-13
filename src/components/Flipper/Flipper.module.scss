@@ -4,7 +4,7 @@ $css-animations-duration: .8s;
 
 .flipper {
   @include overlay;
-  perspective: 200px;
+  perspective: 150px;
 
   &.isIcon {
     background: yellow;
@@ -29,10 +29,14 @@ $css-animations-duration: .8s;
   @include overlay;
   background: #292929;
   backface-visibility: hidden;
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:last-child {
-    background: yellow;
     transform: rotateY(-180deg);
+    background: #666;
     transition: transform 0s $css-animations-duration;
 
     .isFlipped & {
