@@ -1,0 +1,11 @@
+@import './abstract';
+@import './reset';
+
+*, *:after, *:before {
+  box-sizing: border-box;
+}
+
+html {
+  background: #121212;
+  user-select: none;
+}

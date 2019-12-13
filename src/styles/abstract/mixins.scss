@@ -1,0 +1,15 @@
+@mixin make-ratio($ratio: 1, $pseudo: before) {
+  &:#{$pseudo} {
+    content: '';
+    display: block;
+    padding-bottom: 100% * $ratio;
+  }
+}
+
+@mixin overlay($gutter: 0) {
+  position: absolute;
+  top: $gutter;
+  right: $gutter;
+  bottom: $gutter;
+  left: $gutter;
+}

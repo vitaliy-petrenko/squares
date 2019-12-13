@@ -1,26 +1,33 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react'
+import Grid from './components/Grid'
+import { calculateGridSize } from './helpers/grid'
+import { runScenario } from './helpers/scenario'
 
-const App: React.FC = () => {
+const calculateGrid = () => calculateGridSize()
+
+const App: React.FC = ({ children }) => {
+  const
+    [grid, setGrid] = useState(calculateGrid()),
+    reCalc = () => setGrid(calculateGrid())
+
+  useEffect(() => {
+    window.addEventListener('resize', reCalc)
+
+    return () => window.removeEventListener('resize', reCalc)
+  })
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    <Grid columns={grid.columns} rows={grid.rows}/>
+  )
 }
 
-export default App;
+export default App
+
+runScenario([
+  { delay: 0, value: 10 },
+  { delay: 1000, value: 10 },
+  { delay: 1000, value: 'aDS' },
+  { delay: 1000, value: 10 },
+  { delay: 1000, value: 10 },
+], console.log)
+

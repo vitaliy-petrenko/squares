@@ -1,0 +1,96 @@
+@import '../../styles/abstract';
+
+$minCellSize: 40px;
+$maxCellSize: 100px;
+
+:export {
+  minCellSize: $minCellSize;
+  maxCellSize: $maxCellSize;
+}
+
+@function getRandomTranslate() {
+  @return translate(0, 3px - random(6))
+}
+
+@function getRandomScale() {
+  @return scale((100 - random(4))/100)
+}
+
+@function getRandomRotate() {
+  @return rotateY(2deg - random(4)) rotateX(2deg - random(4))
+}
+
+@function getRandomTransform() {
+  @return getRandomTranslate() getRandomScale() getRandomRotate()
+}
+
+$floating-animations-count: 10;
+
+@for $i from 1 through $floating-animations-count {
+  @keyframes floating-#{$i} {
+    from {
+      transform: translate(0, 0px) scale(1);
+    }
+
+    30% {
+      transform: getRandomTransform();
+    }
+
+    50% {
+      transform: getRandomTransform();
+    }
+
+    80% {
+      transform: getRandomTransform();
+    }
+
+    to {
+      transform: translate(0, 0px) scale(1);
+    }
+  }
+}
+
+.grid {
+  @include overlay;
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  padding: $grid-gutter/2;
+  overflow: hidden;
+}
+
+.gridIn {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  flex: 1;
+}
+
+.row {
+  display: flex;
+  flex: 1;
+  flex-shrink: 0;
+}
+
+.col {
+  flex: 1;
+  min-width: $minCellSize;
+  min-height: $minCellSize;
+  padding: $grid-gutter/2;
+  position: relative;
+}
+
+@for $i from 1 through $floating-animations-count {
+  .isFloating#{$i} {
+    animation: floating-#{$i} infinite both;
+    animation-duration: 3s + random(8);
+  }
+}
+
+.colIn {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+

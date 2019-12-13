@@ -1,0 +1,98 @@
+@import '../../styles/abstract';
+
+$css-animations-duration: .8s;
+
+.flipper {
+  @include overlay;
+  perspective: 200px;
+
+  &.isIcon {
+    background: yellow;
+    border-radius: 50%;
+  }
+
+  &.isImage {
+    @include overlay(-$grid-gutter/2)
+  }
+}
+
+.flipperIn {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform $css-animations-duration;
+  will-change: transform;
+}
+
+.flipperSide {
+  @include overlay;
+  background: #292929;
+  backface-visibility: hidden;
+
+  &:last-child {
+    background: yellow;
+    transform: rotateY(-180deg);
+    transition: transform 0s $css-animations-duration;
+
+    .isFlipped & {
+      transition: transform 0s 0s;
+    }
+  }
+}
+
+/**
+1 2 3
+8 x 4
+7 6 5
+ */
+
+@mixin make-direction($rotate3d) {
+  &.isFlipped {
+    .flipperIn {
+      transform: rotate3d(#{$rotate3d});
+    }
+
+    .flipperSide:last-child {
+      transform: rotate3d(#{$rotate3d});
+    }
+  }
+}
+
+.flipper.flipDirection {
+  //-1 -1, 1 1
+  &1 {
+    @include make-direction('-1, 1, 0, -180deg')
+  }
+
+  &5 {
+    @include make-direction('-1, 1, 0, 180deg')
+  }
+
+  //0 1, 0 -1
+  &2 {
+    @include make-direction('1, 0, 0, 180deg');
+  }
+
+  &6 {
+    @include make-direction('1, 0, 0, -180deg');
+  }
+
+  //1 1, -1 -1
+  &3 {
+    @include make-direction('1, 1, 0, 180deg');
+  }
+
+  &7 {
+    @include make-direction('1, 1, 0, -180deg');
+  }
+
+  //1 0, -1 0
+  &4 {
+    @include make-direction('0, 1, 0, 180deg');
+  }
+
+  &8 {
+    @include make-direction('0, 1, 0, -180deg');
+  }
+}
