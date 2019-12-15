@@ -1,153 +1,40 @@
 import React from 'react'
 import classNames from 'classnames'
 import styles from './Flipper.module.scss'
-import { randomInteger } from '../../helpers/misc'
-
-const emojiArray = ['🗼',
-  '🗽',
-  '🗾',
-  '🗿',
-  '😀',
-  '😁',
-  '😂',
-  '😃',
-  '😄',
-  '😅',
-  '😆',
-  '😇',
-  '😈',
-  '😉',
-  '😊',
-  '😋',
-  '😌',
-  '😍',
-  '😎',
-  '😏',
-  '😐',
-  '😑',
-  '😒',
-  '😓',
-  '😔',
-  '😕',
-  '😖',
-  '😗',
-  '😘',
-  '😙',
-  '😚',
-  '😛',
-  '😜',
-  '😝',
-  '😞',
-  '😟',
-  '😠',
-  '😡',
-  '😢',
-  '😣',
-  '😤',
-  '😥',
-  '😦',
-  '😧',
-  '😨',
-  '😩',
-  '😪',
-  '😫',
-  '😬',
-  '😭',
-  '😮',
-  '😯',
-  '😰',
-  '😱',
-  '😲',
-  '😳',
-  '😴',
-  '😵',
-  '😶',
-  '😷',
-  '😸',
-  '😹',
-  '😺',
-  '😻',
-  '😼',
-  '😽',
-  '😾',
-  '😿',
-  '🙀',
-  '🙁',
-  '🙂',
-  '🙃',
-  '🙄',
-  '🙅🏻‍♀️',
-  '🙅🏻‍♂️',
-  '🙅🏻',
-  '🙅🏼‍♀️',
-  '🙅🏼‍♂️',
-  '🙅🏼',
-  '🙅🏽‍♀️',
-  '🙅🏽‍♂️',
-  '🙅🏽',
-  '🙅🏾‍♀️',
-  '🙅🏾‍♂️',
-  '🙅🏾',
-  '🙅🏿‍♀️',
-  '🙅🏿‍♂️',
-  '🙅🏿',
-  '🙅‍♀️',
-  '🙅‍♂️',
-  '🙅',
-  '🙆🏻‍♀️',
-  '🙆🏻‍♂️',
-  '🙆🏻',
-  '🙆🏼‍♀️',
-  '🙆🏼‍♂️',
-  '🙆🏼',
-  '🙆🏽‍♀️',
-  '🙆🏽‍♂️',
-  '🙆🏽',
-  '🙆🏾‍♀️',
-  '🙆🏾‍♂️',
-  '🙆🏾',
-  '🙆🏿‍♀️',
-  '🙆🏿‍♂️',
-  '🙆🏿',
-  '🙆‍♀️',
-  '🙆‍♂️',
-  '🙆',
-  '🙇🏻‍♀️',
-  '🙇🏻‍♂️',
-  '🙇🏻',
-  '🙇🏼‍♀️',
-  '🙇🏼‍♂️',
-  '🙇🏼',
-  '🙇🏽‍♀️',
-  '🙇🏽‍♂️',
-  '🙇🏽',
-  '🙇🏾‍♀️',
-  '🙇🏾‍♂️',
-  '🙇🏾',
-  '🙇🏿‍♀️',]
 
 interface IProps {
-
+  rowsCount: number,
+  columnsCount: number,
+  x: number,
+  y: number
 }
 
 interface IState {
   flip: boolean
-  flipDirection: string
-  emojis: string[]
 }
-
-const getRandomEmoji = (): string => emojiArray[randomInteger(emojiArray.length - 1)]
 
 export default class Flipper extends React.Component<IProps, IState> {
   constructor(props: IProps) {
     super(props)
     this.state = {
       flip: false,
-      flipDirection: randomInteger(8, 1).toString(),
-      emojis: [getRandomEmoji(), getRandomEmoji()]
     }
 
-    setInterval(this.flip, 2500 * randomInteger(40, 1))
+    const { rowsCount, columnsCount, x, y } = props
+
+    const
+      middleX = Math.floor(columnsCount / 2),
+      middleY = Math.floor(rowsCount / 2)
+
+    const delayStep = 400
+
+    console.log(middleX, middleY)
+
+    const iterationDuration = Math.max(middleX, middleY) * delayStep
+
+    setTimeout(() => {
+      setInterval(this.flip, iterationDuration)
+    }, (Math.abs(middleX - x) + Math.abs(middleY - y)) * delayStep)
   }
 
   flip = () => {
@@ -157,19 +44,67 @@ export default class Flipper extends React.Component<IProps, IState> {
     }))
   }
 
+  get flipDirectionClass() {
+    const { rowsCount, columnsCount, x, y } = this.props
+
+    const
+      middleX = Math.floor(columnsCount / 2),
+      middleY = Math.floor(rowsCount / 2),
+      diffX = x - middleX,
+      diffY = y - middleY
+
+    if (diffX === diffY) {
+      //middle
+      if (diffX === 0 && diffY === 0) {
+        return 'flipDirection4'
+      }
+
+      //corners
+      if (x < middleX) {
+        if (y < middleY) {
+          //to left top
+          return 'flipDirection1'
+        } else {
+          //to left bottom
+          return 'flipDirection7'
+        }
+      } else {
+        if (y < middleY) {
+          //to right top
+          return 'flipDirection3'
+        } else {
+          //to right bottom
+          return 'flipDirection5'
+        }
+      }
+    } else {
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          return 'flipDirection8'
+        } else {
+          return 'flipDirection4'
+        }
+      } else {
+        if (diffY < 0) {
+          return 'flipDirection2'
+        } else {
+          return 'flipDirection6'
+        }
+      }
+    }
+  }
+
   render() {
-    const { flip, flipDirection, emojis } = this.state
+    const { flip } = this.state
 
     return (
-      <div className={classNames(styles.flipper, styles[`flipDirection${flipDirection}`], flip && styles.isFlipped)}
+      <div className={classNames(styles.flipper, styles[this.flipDirectionClass], flip && styles.isFlipped)}
            onClick={this.flip}>
         <div className={styles.flipperIn}>
           <div className={styles.flipperSide}>
-            {emojis[0]}
           </div>
 
           <div className={styles.flipperSide}>
-            {emojis[1]}
           </div>
         </div>
       </div>

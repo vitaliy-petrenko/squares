@@ -1,7 +1,8 @@
-export type TScenario = { delay?: number, value: any }
+export type TScenarioValue = any | Function
+export type TScenario = { delay?: number, value: TScenarioValue }
 
 export const delay = (ms: number) => {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     setTimeout(resolve, ms)
   })
 }
@@ -15,15 +16,16 @@ export const makeScenario = (scenarios: TScenario[]) => ({
         await delay(sceneDelay)
       }
 
-      yield value
+      yield typeof value === 'function' ? value() : value
     }
   }
 })
 
-export const runScenario = async <T>(scenes: TScenario[], process: (item: T) => any) => {
+export const runScenario = async <T>(scenes: TScenario[], process: (item: T) => boolean) => {
   const scenario = makeScenario(scenes)
 
   for await (const item of scenario) {
-    process(item)
+    const breakScenario = process(item)
+    if (breakScenario) break
   }
 }
