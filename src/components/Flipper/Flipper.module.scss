@@ -1,6 +1,6 @@
 @import '../../styles/abstract';
 
-$css-animations-duration: 1.8s;
+$css-animations-duration: 1.6s;
 
 .flipper {
   @include overlay;
@@ -33,14 +33,18 @@ $css-animations-duration: 1.8s;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 2 * $css-animations-duration/3;
+
+  .isFlipped &:first-child {
+    background: #151515;
+  }
 
   &:last-child {
     transform: rotateY(-180deg);
-    background: #333;
-    transition: transform 0s $css-animations-duration;
+    background: #151515;
 
     .isFlipped & {
-      transition: transform 0s 0s;
+      background: #222;
     }
   }
 }

@@ -26,7 +26,7 @@ export default class Flipper extends React.Component<IProps, IState> {
       middleX = Math.floor(columnsCount / 2),
       middleY = Math.floor(rowsCount / 2)
 
-    const delayStep = 400
+    const delayStep = 300
 
     console.log(middleX, middleY)
 
@@ -53,7 +53,7 @@ export default class Flipper extends React.Component<IProps, IState> {
       diffX = x - middleX,
       diffY = y - middleY
 
-    if (diffX === diffY) {
+    if (Math.abs(diffX) === Math.abs(diffY)) {
       //middle
       if (diffX === 0 && diffY === 0) {
         return 'flipDirection4'
