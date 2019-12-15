@@ -26,11 +26,13 @@ export default class Flipper extends React.Component<IProps, IState> {
       middleX = Math.floor(columnsCount / 2),
       middleY = Math.floor(rowsCount / 2)
 
-    const delayStep = 300
+    const delayStep = 120
 
     console.log(middleX, middleY)
 
     const iterationDuration = Math.max(middleX, middleY) * delayStep
+
+    if (Math.abs(middleX - x) > 2 * columnsCount / 5 || Math.abs(middleY - y) > 2 * rowsCount / 5) return
 
     setTimeout(() => {
       setInterval(this.flip, iterationDuration)
