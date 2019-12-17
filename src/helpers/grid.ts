@@ -1,3 +1,4 @@
+import { isEqual, uniqWith } from 'lodash'
 import { MAX_CELL_SIZE, MIN_CELL_SIZE } from '../constants'
 import { delay } from './scenario'
 
@@ -120,25 +121,19 @@ export interface I2DVector {
   y: number
 }
 
-interface IGridGeneratorStep {
+interface IGridCell {
   column: number
   row: number
 }
 
 export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
   [Symbol.asyncIterator]: async function* () {
-    let result: number[][] = []
-
-    for (let j = 0; j < rows; j++) {
-      result.push(Array(columns))
-    }
-
     let
       column = -1,
       row = 0,
-      minCol = 0,
+      minColumn = 0,
       minRow = 0,
-      maxCol = columns,
+      maxColumn = columns,
       maxRow = rows,
       vector: I2DVector = {
         x: 1,
@@ -154,9 +149,9 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
           nextY = row + getVectorY()
 
         if (getVectorY() === 0) {
-          if (minCol === maxCol) return null
+          if (minColumn === maxColumn) return null
 
-          if (nextX >= maxCol) {
+          if (nextX >= maxColumn) {
             vector = {
               x: 0,
               y: 1,
@@ -165,7 +160,7 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
             return getNext()
           }
 
-          if (nextX < minCol) {
+          if (nextX < minColumn) {
             vector = {
               x: 0,
               y: -1,
@@ -183,7 +178,7 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
               x: -1,
               y: 0,
             }
-            maxCol--
+            maxColumn--
             return getNext()
           }
 
@@ -192,7 +187,7 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
               x: 1,
               y: 0,
             }
-            minCol++
+            minColumn++
             return getNext()
           }
         }
@@ -210,18 +205,90 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
       column = nextX
       row = nextY
 
-      yield { column, row }
+      yield [{ column, row }]
+    }
+  }
+})
+
+export type TFromCellScenarioArguments = IGridParams & { cell: IGridCell } & { vectors: I2DVector[] }
+
+export const makeFromCellScenario = (
+  { columns, rows, cell, vectors }: TFromCellScenarioArguments
+) => ({
+  [Symbol.asyncIterator]: async function* () {
+    let
+      previousCells = [cell]
+
+    const
+      minColumn = 0,
+      maxColumn = columns - 1,
+      minRow = 0,
+      maxRow = rows - 1,
+      filteredVectors = uniqWith(
+        vectors.filter(
+          vector => !(vector.x === vector.y && vector.x === 0)
+        ),
+        isEqual
+      ),
+      yieldedCells = [{ ...cell }],
+      getNext = () => {
+        const nextCells: IGridCell[] = []
+
+        filteredVectors.forEach(vector => {
+          previousCells.forEach(({ column, row }) => {
+            if (
+              (vector.x === -1 && column <= cell.column) ||
+              (vector.x === 1 && column >= cell.column) ||
+              (vector.y === -1 && row <= cell.row) ||
+              (vector.y === 1 && row >= cell.row)
+            ) {
+              const cell = {
+                column: column + vector.x,
+                row: row + vector.y,
+              }
+
+              if (yieldedCells.find(({ column, row }) => column === cell.column && row === cell.row)) return
+
+              yieldedCells.push(cell)
+              nextCells.push(cell)
+            }
+          })
+        })
+
+        const filtered = uniqWith(
+          nextCells.filter(
+            ({ column, row }) =>
+              (column >= minColumn && row >= minRow && column <= maxColumn && row <= maxRow)
+          ),
+          isEqual
+        )
+
+        if (!filtered.length) return null
+
+        return filtered
+      }
+
+    yield [{ ...cell }]
+
+    while (true) {
+      const nextCells = getNext()
+
+      if (!nextCells) break
+
+      yield nextCells
+
+      previousCells = nextCells
     }
   }
 })
 
 export const runGridScenario = async (
-  scenario: AsyncIterable<IGridGeneratorStep>,
+  scenario: AsyncIterable<IGridCell[]>,
   stepDelay: number,
-  process: (data: IGridGeneratorStep[]) => boolean
+  process: (data: IGridCell[]) => boolean
 ) => {
   for await (const data of scenario) {
-    const breakScenario = process([data])
+    const breakScenario = process(data)
     if (breakScenario) break
 
     if (stepDelay > 0) {

@@ -1,7 +1,13 @@
 import { action, computed, observable, reaction } from 'mobx'
-import { calculateGridSize, getViewportSize, makeSpiralScenario, runGridScenario } from '../helpers/grid'
+import {
+  calculateGridSize,
+  getViewportSize,
+  makeFromCellScenario,
+  makeSpiralScenario,
+  runGridScenario
+} from '../helpers/grid'
 import { debounce } from 'lodash'
-import { getRandomEmojiFromSearch } from '../helpers/emoji'
+import { searchRandomEmoji } from '../helpers/emoji'
 import { delay } from '../helpers/scenario'
 import bind from '../decorators/bind'
 
@@ -72,25 +78,28 @@ export class GridService {
 
   @action
   async showInitialAnimation() {
-    const DELAY = 3000 / this.square
-
-    await delay(1000)
+    const
+      DELAY = 4000 / this.square,
+      { columns, rows, grid } = this,
+      midCellId = grid[Math.floor(rows) / 2][Math.floor(columns) / 2],
+      midCell = this.getCell(midCellId)
 
     {
       const
-        { columns, rows, grid } = this,
         scenarioConfig = { columns, rows },
         scenario = makeSpiralScenario(scenarioConfig)
 
-      await runGridScenario(scenario, DELAY, (data) => {
+      await runGridScenario(scenario, DELAY / 2, (data) => {
         data.forEach(({ column, row }) => {
           const
             id = grid[row][column],
             cell = this.getCell(id)
 
-          if (!cell) return
-
-          cell.content = getRandomEmojiFromSearch(['winter', 'christmas', 'santa', 'gift', 'family'])
+          if (midCellId === id) {
+            cell.content = '👋'
+          } else {
+            cell.content = searchRandomEmoji(['snow', 'happy', 'santa', 'gift', 'family'])
+          }
         })
 
         return false
@@ -99,24 +108,45 @@ export class GridService {
 
     this.initialAnimationWasShown = true
 
-    const
-      { columns, rows, grid } = this,
-      scenarioConfig = { columns, rows },
-      scenario = makeSpiralScenario(scenarioConfig)
+    await delay(300)
 
-    await runGridScenario(scenario, DELAY, (data) => {
-      data.forEach(({ column, row }) => {
-        const
-          id = grid[row][column],
-          cell = this.getCell(id)
+    {
+      const
+        scenarioConfig = {
+          columns, rows,
+          cell: {
+            column: Math.round(this.columns / 2),
+            row: Math.round(this.rows / 2)
+          },
+          vectors: [
+            { x: -1, y: 1 },
+            { x: -1, y: 0 },
+            { x: 0, y: -1 },
+            { x: 0, y: 1 },
+            { x: 1, y: 1 },
+            { x: 1, y: 0 },
+          ]
+        },
+        scenario = makeFromCellScenario(scenarioConfig)
 
-        if (!cell) return
+      await runGridScenario(scenario, DELAY, (data) => {
+        data.forEach(({ column, row }) => {
+          const
+            id = grid[row][column],
+            cell = this.getCell(id)
 
-        cell.content = null
+          if (midCellId !== id) {
+            cell.content = ''
+          }
+        })
+
+        return false
       })
+    }
 
-      return false
-    })
+    await delay(1000)
+
+    midCell.content = ''
 
     this.showInitialAnimation()
   }
@@ -128,7 +158,7 @@ export class GridService {
 
   @bind
   getCell(id: string) {
-    return this.cells.get(id)
+    return this.cells.get(id)!
   }
 
   constructor() {

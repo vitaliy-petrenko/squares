@@ -1,7 +1,7 @@
 import { getRandomArrayItem } from './misc'
 import { emojiIndex } from 'emoji-mart'
 
-export const getRandomEmojiFromSearch = (() => {
+export const searchRandomEmoji = (() => {
   const
     cache = new Map(),
     getSearchResults = (searchString: string): string[] => {
