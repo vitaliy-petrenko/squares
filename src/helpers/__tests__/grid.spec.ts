@@ -96,7 +96,7 @@ describe('make matrix from cell helper', () => {
     let value = 0
 
     await runGridScenario(spiralScenario, 0, (cells) => {
-      cells.forEach(({column, row}) => {
+      cells.forEach(({ column, row }) => {
         result[row][column] = value
       })
 
@@ -123,12 +123,35 @@ describe('make matrix from cell helper', () => {
         ]
       })
 
-    console.log(grid)
-
     expect(grid).toEqual([
       [0, 1, 2],
       [1, 1, 2],
       [2, 2, 2],
+    ])
+  })
+
+  it('must fill from center', async () => {
+    const grid = await getGrid(
+      {
+        columns: 5, rows: 5,
+        cell: {
+          column: 2,
+          row: 2
+        },
+        vectors: [
+          { x: 0, y: 1 },
+          { x: 0, y: -1 },
+          { x: -1, y: 0 },
+          { x: 1, y: 0 },
+        ]
+      })
+
+    expect(grid).toEqual([
+      [4, 3, 2, 3, 4],
+      [3, 2, 1, 2, 3],
+      [2, 1, 0, 1, 2],
+      [3, 2, 1, 2, 3],
+      [4, 3, 2, 3, 4],
     ])
   })
 })

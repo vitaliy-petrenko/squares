@@ -62,6 +62,11 @@ export class GridService {
 
   @action
   private async init() {
+    if (this.isAnimationRun) {
+      this.initWasRequested = true
+      return
+    }
+
     const { columns, rows } = calculateGridSize(this.viewportSize)
 
     this.columns = columns
@@ -70,19 +75,42 @@ export class GridService {
     this.initGrid()
 
     if (!this.initialAnimationWasShown) {
-      await this.showInitialAnimation()
+      this.showInitialAnimation()
     }
   }
 
   private initialAnimationWasShown = false
+
+  private isAnimationRun = false
+  private initWasRequested = false
+
+  @action
+  private startAnimation() {
+    this.isAnimationRun = true
+  }
+
+  @action
+  private stopAnimation() {
+    this.isAnimationRun = false
+
+    if (this.initWasRequested) {
+      this.init()
+    }
+
+    this.initWasRequested = false
+  }
 
   @action
   async showInitialAnimation() {
     const
       DELAY = 4000 / this.square,
       { columns, rows, grid } = this,
-      midCellId = grid[Math.floor(rows) / 2][Math.floor(columns) / 2],
+      midCol = Math.floor(columns / 2),
+      midRow = Math.floor(rows / 2),
+      midCellId = grid[midRow][midCol],
       midCell = this.getCell(midCellId)
+
+    this.startAnimation()
 
     {
       const
@@ -115,16 +143,14 @@ export class GridService {
         scenarioConfig = {
           columns, rows,
           cell: {
-            column: Math.round(this.columns / 2),
-            row: Math.round(this.rows / 2)
+            column: midCol,
+            row: midRow,
           },
           vectors: [
-            { x: -1, y: 1 },
-            { x: -1, y: 0 },
             { x: 0, y: -1 },
             { x: 0, y: 1 },
-            { x: 1, y: 1 },
             { x: 1, y: 0 },
+            { x: -1, y: 0 },
           ]
         },
         scenario = makeFromCellScenario(scenarioConfig)
@@ -147,6 +173,8 @@ export class GridService {
     await delay(1000)
 
     midCell.content = ''
+
+    this.stopAnimation()
 
     this.showInitialAnimation()
   }
