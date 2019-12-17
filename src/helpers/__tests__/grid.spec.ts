@@ -7,7 +7,7 @@ import {
   makeFromCellScenario,
   makeSpiralScenario,
   runGridScenario,
-  TFromCellScenarioArguments
+  IFromCellScenarioArguments
 } from '../grid'
 
 describe('make grid helper', () => {
@@ -47,7 +47,6 @@ describe('make ordered spiral helper', () => {
 
     await runGridScenario(scenario, 0, ([{ column, row }]) => {
       result[row][column] = value++
-      return false
     })
 
     return result
@@ -88,7 +87,7 @@ describe('make ordered spiral helper', () => {
 })
 
 describe('make matrix from cell helper', () => {
-  const getGrid = async (config: TFromCellScenarioArguments): Promise<number[][]> => {
+  const getGrid = async (config: IFromCellScenarioArguments): Promise<number[][]> => {
     const
       spiralScenario = makeFromCellScenario(config),
       result = getFilledMatrix({ ...config, value: 0 })
@@ -101,8 +100,6 @@ describe('make matrix from cell helper', () => {
       })
 
       value++
-
-      return false
     })
 
     return result

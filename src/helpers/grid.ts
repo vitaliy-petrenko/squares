@@ -210,20 +210,27 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
   }
 })
 
-export type TFromCellScenarioArguments = IGridParams & { cell: IGridCell } & { vectors: I2DVector[] }
+export interface IFromCellScenarioArguments extends IGridParams {
+  cell: IGridCell,
+  vectors: I2DVector[],
+  minColumn?: number
+  minRow?: number
+  maxColumn?: number
+  maxRow?: number
+}
 
 export const makeFromCellScenario = (
-  { columns, rows, cell, vectors }: TFromCellScenarioArguments
+  { columns, rows, cell, vectors, minColumn, minRow, maxColumn, maxRow }: IFromCellScenarioArguments
 ) => ({
   [Symbol.asyncIterator]: async function* () {
     let
       previousCells = [cell]
 
     const
-      minColumn = 0,
-      maxColumn = columns - 1,
-      minRow = 0,
-      maxRow = rows - 1,
+      _minColumn = minColumn ? minColumn : 0,
+      _maxColumn = maxColumn ? maxColumn - 1 : columns - 1,
+      _minRow = minRow ? minRow : 0,
+      _maxRow = maxRow ? maxRow - 1 : rows - 1,
       filteredVectors = uniqWith(
         vectors.filter(
           vector => !(vector.x === vector.y && vector.x === 0)
@@ -258,7 +265,7 @@ export const makeFromCellScenario = (
         const filtered = uniqWith(
           nextCells.filter(
             ({ column, row }) =>
-              (column >= minColumn && row >= minRow && column <= maxColumn && row <= maxRow)
+              (column >= _minColumn && row >= _minRow && column <= _maxColumn && row <= _maxRow)
           ),
           isEqual
         )
@@ -285,10 +292,12 @@ export const makeFromCellScenario = (
 export const runGridScenario = async (
   scenario: AsyncIterable<IGridCell[]>,
   stepDelay: number,
-  process: (data: IGridCell[]) => void
+  process: (data: IGridCell[]) => true | void
 ) => {
   for await (const data of scenario) {
-    process(data)
+    const result = process(data)
+
+    if (result) break
 
     if (stepDelay > 0) {
       await delay(stepDelay)

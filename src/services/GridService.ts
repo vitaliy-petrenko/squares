@@ -3,6 +3,8 @@ import {
   calculateGridSize,
   getViewportSize,
   I2DVector,
+  IFromCellScenarioArguments,
+  isMobile,
   makeFromCellScenario,
   makeSpiralScenario,
   runGridScenario
@@ -29,6 +31,7 @@ export class GridService {
   rows: number = 0
 
   @observable.struct viewportSize = getViewportSize()
+  @observable isMobile: boolean = false
 
   @observable
   private view: EViews = EViews.initial
@@ -107,8 +110,9 @@ export class GridService {
     this.startAnimation()
 
     const
-      DELAY = 4000 / this.square,
-      { columns, rows, grid } = this,
+      { columns, rows, grid, isMobile } = this,
+      CLEAR_OFFSET = 1,
+      STEP_DELAY = isMobile ? 15 : 10,
       midCol = Math.floor(columns / 2),
       midRow = Math.floor(rows / 2),
       midCellId = grid[midRow][midCol],
@@ -120,19 +124,23 @@ export class GridService {
         scenarioConfig = { columns, rows },
         scenario = makeSpiralScenario(scenarioConfig)
 
-      await runGridScenario(scenario, DELAY / 2, (data) => {
-        data.forEach(({ column, row }) => {
-          const
-            id = grid[row][column],
-            cell = this.getCell(id)
+      await runGridScenario(
+        scenario,
+        STEP_DELAY,
+        (data) => {
+          data.forEach(({ column, row }) => {
+            const
+              id = grid[row][column],
+              cell = this.getCell(id)
 
-          if (midCellId === id) {
-            cell.content = midCellSymbol
-          } else {
-            cell.content = searchRandomEmoji(['snow', 'happy', 'santa', 'gift', 'family'])
-          }
-        })
-      })
+            if (midCellId === id) {
+              cell.content = midCellSymbol
+            } else {
+              cell.content = searchRandomEmoji(['snow', 'happy', 'santa', 'gift', 'family'])
+            }
+          })
+        }
+      )
     }
 
     this.initialAnimationWasShown = true
@@ -142,17 +150,21 @@ export class GridService {
     {
       const clear = async (vectors: I2DVector[]) => {
         const
-          scenarioConfig = {
+          scenarioConfig: IFromCellScenarioArguments = {
             columns, rows,
             cell: {
               column: midCol,
               row: midRow,
             },
-            vectors
+            vectors,
+            minColumn: CLEAR_OFFSET,
+            minRow: CLEAR_OFFSET,
+            maxColumn: columns - CLEAR_OFFSET,
+            maxRow: rows - CLEAR_OFFSET,
           },
           scenario = makeFromCellScenario(scenarioConfig)
 
-        await runGridScenario(scenario, DELAY, (data) => {
+        await runGridScenario(scenario, STEP_DELAY * 2, (data) => {
           data.forEach(({ column, row }) => {
             const
               id = grid[row][column],
@@ -186,7 +198,36 @@ export class GridService {
 
     await delay(1400)
 
+    {
+      const
+        scenarioConfig = { columns, rows },
+        scenario = makeSpiralScenario(scenarioConfig)
+
+      await runGridScenario(
+        scenario,
+        STEP_DELAY,
+        (data) => {
+          let stop = false
+
+          data.forEach(({ column, row }) => {
+            const
+              id = grid[row][column],
+              cell = this.getCell(id)
+
+            cell.content = ''
+
+            stop = row === CLEAR_OFFSET && column === CLEAR_OFFSET - 1
+          })
+
+          if (stop) return true
+        }
+      )
+    }
+
+    await (400)
+
     midCell.isHello = false
+    midCell.content = ''
 
     this.stopAnimation()
 
@@ -204,6 +245,8 @@ export class GridService {
   }
 
   constructor() {
+    this.isMobile = isMobile()
+
     this.init()
 
     window.addEventListener('resize', debounce(() => {
@@ -213,6 +256,7 @@ export class GridService {
     reaction(() => {
       return this.viewportSize
     }, () => {
+      this.isMobile = isMobile()
       this.init()
     })
   }
