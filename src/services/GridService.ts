@@ -2,6 +2,7 @@ import { action, computed, observable, reaction } from 'mobx'
 import {
   calculateGridSize,
   getViewportSize,
+  I2DVector,
   makeFromCellScenario,
   makeSpiralScenario,
   runGridScenario
@@ -17,6 +18,7 @@ export type TFlipperContent = string | null
 
 export interface ICell {
   content?: TFlipperContent
+  isHello?: boolean
 }
 
 export class GridService {
@@ -108,7 +110,8 @@ export class GridService {
       midCol = Math.floor(columns / 2),
       midRow = Math.floor(rows / 2),
       midCellId = grid[midRow][midCol],
-      midCell = this.getCell(midCellId)
+      midCell = this.getCell(midCellId),
+      midCellSymbol = '✋'
 
     this.startAnimation()
 
@@ -124,13 +127,11 @@ export class GridService {
             cell = this.getCell(id)
 
           if (midCellId === id) {
-            cell.content = '👋'
+            cell.content = midCellSymbol
           } else {
             cell.content = searchRandomEmoji(['snow', 'happy', 'santa', 'gift', 'family'])
           }
         })
-
-        return false
       })
     }
 
@@ -139,42 +140,55 @@ export class GridService {
     await delay(300)
 
     {
-      const
-        scenarioConfig = {
-          columns, rows,
-          cell: {
-            column: midCol,
-            row: midRow,
+      const clear = async (vectors: I2DVector[]) => {
+        const
+          scenarioConfig = {
+            columns, rows,
+            cell: {
+              column: midCol,
+              row: midRow,
+            },
+            vectors
           },
-          vectors: [
-            { x: 0, y: -1 },
-            { x: 0, y: 1 },
-            { x: 1, y: 0 },
-            { x: -1, y: 0 },
-          ]
-        },
-        scenario = makeFromCellScenario(scenarioConfig)
+          scenario = makeFromCellScenario(scenarioConfig)
 
-      await runGridScenario(scenario, DELAY, (data) => {
-        data.forEach(({ column, row }) => {
-          const
-            id = grid[row][column],
-            cell = this.getCell(id)
+        await runGridScenario(scenario, DELAY, (data) => {
+          data.forEach(({ column, row }) => {
+            const
+              id = grid[row][column],
+              cell = this.getCell(id)
 
-          if (midCellId !== id) {
-            cell.content = ''
-          }
+            if (midCellId !== id) {
+              cell.content = ''
+            }
+          })
         })
+      }
 
-        return false
-      })
+      await clear([
+        { x: 1, y: 1 },
+        { x: 1, y: -1 },
+        { x: -1, y: 1 },
+        { x: -1, y: -1 },
+      ])
+
+      await clear([
+        { x: -1, y: 1 },
+        { x: -1, y: -1 },
+        { x: 0, y: -1 },
+        { x: 1, y: -1 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+      ])
     }
 
-    await delay(1000)
-
-    midCell.content = ''
-
     this.stopAnimation()
+
+    midCell.isHello = true
+
+    await delay(1400)
+
+    midCell.isHello = false
 
     this.showInitialAnimation()
   }

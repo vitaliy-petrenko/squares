@@ -4,6 +4,7 @@ import styles from './Cell.module.scss'
 import { observer } from 'mobx-react'
 import { useGrid } from '../../contextProviders/GridProvider'
 
+export const HELLO_CLASS_NAME = styles.isHello
 
 const Cell = observer(({ id }: { id: string }) => {
   const
@@ -13,10 +14,15 @@ const Cell = observer(({ id }: { id: string }) => {
   if (!cell) return null
 
   const
-    { content } = cell
+    { content, isHello } = cell,
+    className = classNames(
+      styles.cell,
+      styles.isText,
+      isHello && styles.isHello
+    )
 
   return (
-    <div className={classNames(styles.cell, styles.isText)}>
+    <div className={className}>
       {content}
     </div>
   )

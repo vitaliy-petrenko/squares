@@ -121,7 +121,7 @@ export interface I2DVector {
   y: number
 }
 
-interface IGridCell {
+export interface IGridCell {
   column: number
   row: number
 }
@@ -285,11 +285,10 @@ export const makeFromCellScenario = (
 export const runGridScenario = async (
   scenario: AsyncIterable<IGridCell[]>,
   stepDelay: number,
-  process: (data: IGridCell[]) => boolean
+  process: (data: IGridCell[]) => void
 ) => {
   for await (const data of scenario) {
-    const breakScenario = process(data)
-    if (breakScenario) break
+    process(data)
 
     if (stepDelay > 0) {
       await delay(stepDelay)
