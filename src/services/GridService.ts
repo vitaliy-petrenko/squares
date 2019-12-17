@@ -1,8 +1,9 @@
 import { action, computed, observable, reaction } from 'mobx'
 import { calculateGridSize, getViewportSize, makeSpiralScenario, runGridScenario } from '../helpers/grid'
 import { debounce } from 'lodash'
-import uuid from 'uuid'
-import { getRandomEmoji } from '../helpers/emoji'
+import { getRandomEmojiFromSearch } from '../helpers/emoji'
+import { delay } from '../helpers/scenario'
+import bind from '../decorators/bind'
 
 export enum EViews { initial, application, snake }
 
@@ -10,10 +11,6 @@ export type TFlipperContent = string | null
 
 export interface ICell {
   content?: TFlipperContent
-}
-
-export interface ICells {
-  [key: string]: ICell
 }
 
 export class GridService {
@@ -26,17 +23,13 @@ export class GridService {
   @observable.struct viewportSize = getViewportSize()
 
   @observable
-  view: EViews = EViews.initial
+  private view: EViews = EViews.initial
 
   @observable
   grid: string[][] = []
 
   @observable
   private cells = new Map<string, ICell>()
-
-  getCell(id: string) {
-    return this.cells.get(id)
-  }
 
   @action
   private initGrid() {
@@ -48,7 +41,7 @@ export class GridService {
       result.push([])
 
       for (let column = 0; column < this.columns; column++) {
-        const cellId = uuid.v4()
+        const cellId = `${row}-${column}`
 
         result[row].push(cellId)
 
@@ -62,7 +55,7 @@ export class GridService {
   }
 
   @action
-  private init() {
+  private async init() {
     const { columns, rows } = calculateGridSize(this.viewportSize)
 
     this.columns = columns
@@ -70,23 +63,18 @@ export class GridService {
 
     this.initGrid()
 
-    if (this.needToShowInitialAnimation) {
-      this.showInitialAnimation()
+    if (!this.initialAnimationWasShown) {
+      await this.showInitialAnimation()
     }
   }
 
-  private get needToShowInitialAnimation() {
-    return true
-  }
-
-  @computed
-  get square() {
-    return this.columns * this.rows
-  }
+  private initialAnimationWasShown = false
 
   @action
   async showInitialAnimation() {
     const DELAY = 3000 / this.square
+
+    await delay(1000)
 
     {
       const
@@ -102,12 +90,14 @@ export class GridService {
 
           if (!cell) return
 
-          cell.content = getRandomEmoji()
+          cell.content = getRandomEmojiFromSearch(['winter', 'christmas', 'santa', 'gift', 'family'])
         })
 
         return false
       })
     }
+
+    this.initialAnimationWasShown = true
 
     const
       { columns, rows, grid } = this,
@@ -129,54 +119,16 @@ export class GridService {
     })
 
     this.showInitialAnimation()
+  }
 
-    // const spiral = makeSpiral(this.rows, this.columns)
-    //
-    // console.log(spiral)
-    // this.grid = spiral.map(
-    //   row => ({
-    //     id: uuid.v4(),
-    //     columns: row.map(
-    //       value => ({
-    //         id: uuid.v4(),
-    //         content: getRandomEmoji(),
-    //         type: ECellType.text,
-    //         delay: LINEAR_DELAY * value + INITIAL_DELAY,
-    //       })
-    //     )
-    //   })
-    // )
+  @computed
+  get square() {
+    return this.columns * this.rows
+  }
 
-    // await (delay(INITIAL_DELAY + this.square * LINEAR_DELAY + 1900))
-    //
-    // const
-    //   middleX = Math.floor(this.columns / 2),
-    //   middleY = Math.floor(this.rows / 2),
-    //   next: IRow[] = this.grid.map(({ id, columns }, y) => ({
-    //     id,
-    //     columns: columns.map(
-    //       ((cell, x) => {
-    //           return {
-    //             ...cell,
-    //             id: uuid.v4(),
-    //             delay: Math.max(Math.abs(middleY - y), Math.abs(middleX - x)) * 100,
-    //             vector: Math.abs(middleY - y) === Math.abs(middleX - x) ? {
-    //               x: x < middleX ? -1 : 1,
-    //               y: y < middleY ? -1 : 1
-    //             } : x < middleX ? {
-    //               x: -1,
-    //               y: 0
-    //             } : {
-    //               x: 1,
-    //               y: 0
-    //             },
-    //             content: null
-    //           }
-    //         }
-    //       ))
-    //   }))
-
-    // this.grid = next
+  @bind
+  getCell(id: string) {
+    return this.cells.get(id)
   }
 
   constructor() {

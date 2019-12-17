@@ -7,8 +7,8 @@ import { useGrid } from '../../contextProviders/GridProvider'
 
 const Cell = observer(({ id }: { id: string }) => {
   const
-    gridService = useGrid(),
-    cell = gridService.getCell(id)
+    { getCell } = useGrid(),
+    cell = getCell(id)
 
   if (!cell) return null
 
