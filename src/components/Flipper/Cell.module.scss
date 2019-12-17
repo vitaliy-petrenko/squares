@@ -17,6 +17,7 @@ $css-animations-duration: 1.4s;
 
   &.isHello {
     animation: hello-animation $css-animations-duration;
+    transform: scale(1) translate3d(0, 0, 0) rotate(0);
     transform-origin: 48% 85%;
   }
 

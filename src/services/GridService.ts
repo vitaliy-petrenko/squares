@@ -80,6 +80,7 @@ export class GridService {
     this.initGrid()
 
     if (!this.initialAnimationWasShown) {
+      await delay(1000)
       this.showInitialAnimation()
     }
   }
@@ -177,7 +178,7 @@ export class GridService {
         })
       }
 
-      await clear([
+      !isMobile && await clear([
         { x: 1, y: 1 },
         { x: 1, y: -1 },
         { x: -1, y: 1 },
@@ -196,7 +197,8 @@ export class GridService {
 
     midCell.isHello = true
 
-    await delay(1400)
+
+    await delay(800)
 
     {
       const
@@ -223,8 +225,6 @@ export class GridService {
         }
       )
     }
-
-    await (400)
 
     midCell.isHello = false
     midCell.content = ''

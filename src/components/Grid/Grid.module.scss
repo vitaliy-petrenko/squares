@@ -11,14 +11,13 @@ $maxCellSize: 100px;
 .grid {
   //background: var(--body-bg);
   color: var(--text-color);
-  background: linear-gradient(to top, #141E30, #243B55); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  //background: linear-gradient(to top, #141E30, #243B55); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
   //background: linear-gradient(to top, #093028, #1F6C4D); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
   //background: linear-gradient(to top, #159957, #155799); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
   //background: linear-gradient(to top, #C94B4B, #4B134F); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
   //background: linear-gradient(to top, #108DC7, #EF8E38); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-  //background: linear-gradient(to top, #360033, #0B8793); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  background: linear-gradient(to right top, #321A4F, #173863, #103234); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
   //background: linear-gradient(to bottom, #388474, #093637); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-
 
   @include overlay;
   position: fixed;
