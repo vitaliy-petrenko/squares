@@ -1,95 +1,42 @@
-import React, { useMemo, useState } from 'react'
-import { debounce } from 'lodash'
-import { orderedArray } from '../../helpers/misc'
-import Flipper from '../Flipper'
+import React from 'react'
 import styles from './Grid.module.scss'
 import classNames from 'classnames'
-import { calculateGridSize } from '../../helpers/grid'
+import Cell from '../Flipper'
+import { useGrid } from '../../contextProviders/GridProvider'
+import { observer } from 'mobx-react'
 
-interface IProps {
-}
+const Grid = observer(() => {
+  const { grid } = useGrid()
 
-const calculateGrid = () => calculateGridSize()
-
-class Grid extends React.Component<IProps> {
-  state = {
-    grid: calculateGrid()
-  }
-
-  get gridRows() {
-    return orderedArray(this.state.grid.rows)
-  }
-
-  get gridColumns() {
-    return orderedArray(this.state.grid.columns)
-  }
-
-  onWindowResize = () => {
-    this.setState({
-      grid: calculateGrid()
-    })
-  }
-
-  onWindowResizeDebounced = debounce(this.onWindowResize, 400)
-
-  componentDidMount(): void {
-    window.addEventListener('resize', this.onWindowResizeDebounced)
-  }
-
-  componentWillUnmount(): void {
-    window.removeEventListener('resize', this.onWindowResizeDebounced)
-  }
-
-  render() {
-    const
-      rowsArray = this.gridRows,
-      columnsArray = this.gridColumns
-
-    return (
-      <div className={styles.grid}>
-        <div className={styles.gridIn}>
-          {
-            rowsArray.map(row => (
-              <Row key={row}>
-                {
-                  columnsArray.map(column => (
-                    <Col key={column}>
-                      <Flipper
-                        x={column}
-                        y={row}
-                        columnsCount={columnsArray.length}
-                        rowsCount={rowsArray.length}
-                      />
-                    </Col>
-                  ))
-                }
-              </Row>
-            ))
-          }
-        </div>
-      </div>
-    )
-  }
-}
+  return (
+    <div className={styles.grid}>
+      {
+        grid.map(({ id, columns }) => (
+          <Row key={id}>
+            {
+              columns.map(id => (
+                <Col key={id}>
+                  <Cell id={id}/>
+                </Col>
+              ))
+            }
+          </Row>
+        ))
+      }
+    </div>
+  )
+})
 
 const Row: React.FC = ({ children }) => <div className={styles.row}>{children}</div>
 
-const getRandomFloatingClass = () => styles[`isFloating${Math.round(10 * Math.random())}`]
-
 const Col: React.FC = ({ children }) => {
-  const
-    [isEmpty] = useState(true),
-    floatingClass = useMemo(getRandomFloatingClass, [isEmpty])
-
   return (
     <div
       className={
-        classNames(styles.col, isEmpty && floatingClass)
+        classNames(styles.col)
       }
     >
-      <div className={styles.colIn}>
-        {children}
-      </div>
+      {children}
     </div>
   )
 }

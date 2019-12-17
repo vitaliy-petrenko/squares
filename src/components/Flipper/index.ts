@@ -1,1 +1,1 @@
-export { default } from './Flipper'
+export { default } from './Cell'

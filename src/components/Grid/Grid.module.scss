@@ -1,6 +1,6 @@
 @import '../../styles/abstract';
 
-$minCellSize: 50px;
+$minCellSize: 40px;
 $maxCellSize: 100px;
 
 :export {
@@ -8,62 +8,24 @@ $maxCellSize: 100px;
   maxCellSize: $maxCellSize;
 }
 
-@function getRandomTranslate() {
-  @return translate(0, 3px - random(6))
-}
-
-@function getRandomScale() {
-  @return scale((100 - random(4))/100)
-}
-
-@function getRandomRotate() {
-  @return rotateY(2deg - random(4)) rotateX(2deg - random(4))
-}
-
-@function getRandomTransform() {
-  @return getRandomTranslate() getRandomScale() getRandomRotate()
-}
-
-$floating-animations-count: 10;
-
-@for $i from 1 through $floating-animations-count {
-  @keyframes floating-#{$i} {
-    from {
-      transform: translate(0, 0px) scale(1);
-    }
-
-    30% {
-      transform: getRandomTransform();
-    }
-
-    50% {
-      transform: getRandomTransform();
-    }
-
-    80% {
-      transform: getRandomTransform();
-    }
-
-    to {
-      transform: translate(0, 0px) scale(1);
-    }
-  }
-}
-
 .grid {
+  //background: var(--body-bg);
+  color: var(--text-color);
+  background: linear-gradient(to top, #141E30, #243B55); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  //background: linear-gradient(to top, #093028, #1F6C4D); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  //background: linear-gradient(to top, #159957, #155799); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  //background: linear-gradient(to top, #C94B4B, #4B134F); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  //background: linear-gradient(to top, #108DC7, #EF8E38); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  //background: linear-gradient(to top, #360033, #0B8793); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  //background: linear-gradient(to bottom, #388474, #093637); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+
+
   @include overlay;
   position: fixed;
   display: flex;
   flex-direction: column;
-  padding: $grid-gutter/2;
   overflow: hidden;
-}
-
-.gridIn {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  flex: 1;
+  user-select: none;
 }
 
 .row {
@@ -76,21 +38,6 @@ $floating-animations-count: 10;
   flex: 1;
   min-width: $minCellSize;
   min-height: $minCellSize;
-  padding: $grid-gutter/2;
   position: relative;
 }
-
-@for $i from 1 through $floating-animations-count {
-  .isFloating#{$i} {
-    animation: floating-#{$i} infinite both;
-    animation-duration: 3s + random(8);
-  }
-}
-
-.colIn {
-  position: relative;
-  height: 100%;
-  width: 100%;
-}
-
 
