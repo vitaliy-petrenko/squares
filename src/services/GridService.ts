@@ -104,6 +104,8 @@ export class GridService {
 
   @action
   async showInitialAnimation() {
+    this.startAnimation()
+
     const
       DELAY = 4000 / this.square,
       { columns, rows, grid } = this,
@@ -112,8 +114,6 @@ export class GridService {
       midCellId = grid[midRow][midCol],
       midCell = this.getCell(midCellId),
       midCellSymbol = '✋'
-
-    this.startAnimation()
 
     {
       const
@@ -182,15 +182,15 @@ export class GridService {
       ])
     }
 
-    this.stopAnimation()
-
     midCell.isHello = true
 
     await delay(1400)
 
     midCell.isHello = false
 
-    this.showInitialAnimation()
+    this.stopAnimation()
+
+    await this.showInitialAnimation()
   }
 
   @computed
