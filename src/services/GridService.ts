@@ -6,12 +6,9 @@ import { getRandomEmoji } from '../helpers/emoji'
 
 export enum EViews { initial, application, snake }
 
-export enum ECellType { empty, text, link, image }
-
 export type TFlipperContent = string | null
 
 export interface ICell {
-  type: ECellType
   content?: TFlipperContent
 }
 
@@ -61,7 +58,7 @@ export class GridService {
         result[row].columns.push(cellId)
 
         this.cells[cellId] = {
-          type: ECellType.empty,
+          content: null
         }
       }
     }
@@ -108,7 +105,6 @@ export class GridService {
             cellId = grid[row].columns[column],
             cell = this.getCell(cellId)
 
-          cell.type = ECellType.text
           cell.content = getRandomEmoji()
         })
 
@@ -127,8 +123,7 @@ export class GridService {
           cellId = grid[row].columns[column],
           cell = this.getCell(cellId)
 
-        cell.type = ECellType.empty
-        cell.content = ''
+        cell.content = null
       })
 
       return false
