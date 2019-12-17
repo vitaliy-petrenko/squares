@@ -8,7 +8,12 @@ import { useGrid } from '../../contextProviders/GridProvider'
 const Cell = observer(({ id }: { id: string }) => {
   const
     gridService = useGrid(),
-    { content } = gridService.getCell(id)
+    cell = gridService.getCell(id)
+
+  if (!cell) return null
+
+  const
+    { content } = cell
 
   return (
     <div className={classNames(styles.cell, styles.isText)}>

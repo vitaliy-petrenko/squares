@@ -11,11 +11,11 @@ const Grid = observer(() => {
   return (
     <div className={styles.grid}>
       {
-        grid.map(({ id, columns }) => (
-          <Row key={id}>
+        grid.map((columns, row) => (
+          <Row key={row}>
             {
-              columns.map(id => (
-                <Col key={id}>
+              columns.map((id, column) => (
+                <Col key={column}>
                   <Cell id={id}/>
                 </Col>
               ))

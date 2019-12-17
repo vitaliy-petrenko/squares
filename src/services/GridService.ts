@@ -12,11 +12,6 @@ export interface ICell {
   content?: TFlipperContent
 }
 
-export interface IRow {
-  columns: string[]
-  id: string
-}
-
 export interface ICells {
   [key: string]: ICell
 }
@@ -34,36 +29,34 @@ export class GridService {
   view: EViews = EViews.initial
 
   @observable
-  grid: Array<IRow> = []
+  grid: string[][] = []
 
   @observable
-  private cells: ICells = {}
+  private cells = new Map<string, ICell>()
 
   getCell(id: string) {
-    return this.cells[id]
+    return this.cells.get(id)
   }
 
-  @action initGrid() {
-    let result: Array<IRow> = []
+  @action
+  private initGrid() {
+    let result: string[][] = []
+
+    this.cells.clear()
 
     for (let row = 0; row < this.rows; row++) {
-      result.push({
-        id: uuid.v4(),
-        columns: []
-      })
+      result.push([])
 
       for (let column = 0; column < this.columns; column++) {
         const cellId = uuid.v4()
 
-        result[row].columns.push(cellId)
+        result[row].push(cellId)
 
-        this.cells[cellId] = {
+        this.cells.set(cellId, {
           content: null
-        }
+        })
       }
     }
-
-    console.log(this.cells)
 
     this.grid = result
   }
@@ -93,17 +86,21 @@ export class GridService {
 
   @action
   async showInitialAnimation() {
+    const DELAY = 3000 / this.square
+
     {
       const
         { columns, rows, grid } = this,
         scenarioConfig = { columns, rows },
         scenario = makeSpiralScenario(scenarioConfig)
 
-      await runGridScenario(scenario, 15, (data) => {
+      await runGridScenario(scenario, DELAY, (data) => {
         data.forEach(({ column, row }) => {
           const
-            cellId = grid[row].columns[column],
-            cell = this.getCell(cellId)
+            id = grid[row][column],
+            cell = this.getCell(id)
+
+          if (!cell) return
 
           cell.content = getRandomEmoji()
         })
@@ -117,11 +114,13 @@ export class GridService {
       scenarioConfig = { columns, rows },
       scenario = makeSpiralScenario(scenarioConfig)
 
-    await runGridScenario(scenario, 5, (data) => {
+    await runGridScenario(scenario, DELAY, (data) => {
       data.forEach(({ column, row }) => {
         const
-          cellId = grid[row].columns[column],
-          cell = this.getCell(cellId)
+          id = grid[row][column],
+          cell = this.getCell(id)
+
+        if (!cell) return
 
         cell.content = null
       })
