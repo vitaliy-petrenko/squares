@@ -14,6 +14,8 @@ export const searchRandomEmoji = (() => {
       // @ts-ignore
       const searchResults = emojiIndex.search(searchString).map((item) => item.native)
 
+      // console.log(searchString, searchResults)
+
       cache.set(searchString, searchResults)
 
       return searchResults

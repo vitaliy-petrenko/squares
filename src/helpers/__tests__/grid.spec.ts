@@ -3,11 +3,9 @@ import {
   getFilledMatrix,
   getFlipDirectionKey,
   getMinGridSize,
-  IGridParams,
   makeFromCellScenario,
   makeSpiralScenario,
   runGridScenario,
-  IFromCellScenarioArguments
 } from '../grid'
 
 describe('make grid helper', () => {

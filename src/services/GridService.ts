@@ -2,8 +2,6 @@ import { action, computed, observable, reaction } from 'mobx'
 import {
   calculateGridSize,
   getViewportSize,
-  I2DVector,
-  IFromCellScenarioArguments,
   isMobile,
   makeFromCellScenario,
   makeSpiralScenario,
@@ -13,14 +11,13 @@ import { debounce } from 'lodash'
 import { searchRandomEmoji } from '../helpers/emoji'
 import { delay } from '../helpers/scenario'
 import bind from '../decorators/bind'
+import cellStyles from '../components/Cell/Cell.module.scss'
+import { EmojiModel, EmptyModel, HelloEmojiModel, TCellModel } from '../models/cell'
 
 export enum EViews { initial, application, snake }
 
-export type TFlipperContent = string | null
-
 export interface ICell {
-  content?: TFlipperContent
-  isHello?: boolean
+  model: TCellModel
 }
 
 export class GridService {
@@ -42,6 +39,35 @@ export class GridService {
   @observable
   private cells = new Map<string, ICell>()
 
+  private menuPosition: IGridCell = {
+    column: 0,
+    row: 0
+  }
+
+  private pagePosition: IGridCell = {
+    column: 0,
+    row: 0
+  }
+
+  constructor() {
+    this.isMobile = isMobile()
+
+    this.init()
+
+    this.showInitialAnimation = this.withAnimationDecorator(this.showInitialAnimation)
+
+    window.addEventListener('resize', debounce(() => {
+      this.viewportSize = getViewportSize()
+    }, 500))
+
+    reaction(() => {
+      return this.viewportSize
+    }, () => {
+      this.isMobile = isMobile()
+      this.init()
+    })
+  }
+
   @action
   private initGrid() {
     let result: string[][] = []
@@ -57,7 +83,7 @@ export class GridService {
         result[row].push(cellId)
 
         this.cells.set(cellId, {
-          content: null
+          model: new EmptyModel()
         })
       }
     }
@@ -65,7 +91,6 @@ export class GridService {
     this.grid = result
   }
 
-  @action
   private async init() {
     if (this.isAnimationRun) {
       this.initWasRequested = true
@@ -90,13 +115,11 @@ export class GridService {
   private isAnimationRun = false
   private initWasRequested = false
 
-  @action
-  private startAnimation() {
+  startAnimation() {
     this.isAnimationRun = true
   }
 
-  @action
-  private stopAnimation() {
+  stopAnimation() {
     this.isAnimationRun = false
 
     if (this.initWasRequested) {
@@ -106,19 +129,24 @@ export class GridService {
     this.initWasRequested = false
   }
 
-  @action
-  async showInitialAnimation() {
-    this.startAnimation()
+  private withAnimationDecorator(method: Function) {
+    return async (...args: any) => {
+      this.startAnimation()
+      await method.apply(this, args)
+      this.stopAnimation()
+    }
+  }
 
+  async showInitialAnimation() {
     const
       { columns, rows, grid, isMobile } = this,
       CLEAR_OFFSET = 1,
       STEP_DELAY = isMobile ? 15 : 10,
-      midCol = Math.floor(columns / 2),
+      midColumn = Math.floor(columns / 2),
       midRow = Math.floor(rows / 2),
-      midCellId = grid[midRow][midCol],
-      midCell = this.getCell(midCellId),
-      midCellSymbol = '✋'
+      middleCellId = grid[midRow][midColumn],
+      middleCell = this.getCell(middleCellId),
+      helloSymbol = '✋'
 
     {
       const
@@ -134,27 +162,27 @@ export class GridService {
               id = grid[row][column],
               cell = this.getCell(id)
 
-            if (midCellId === id) {
-              cell.content = midCellSymbol
+            if (middleCellId === id) {
+              middleCell.model = new EmojiModel(helloSymbol)
             } else {
-              cell.content = searchRandomEmoji(['snow', 'happy', 'santa', 'gift', 'family'])
+              cell.model = new EmojiModel(searchRandomEmoji([
+                'snow', 'happy', 'santa', 'gift', 'family', 'beer', 'coffee', 'cup tea', 'glass wine', 'celebration', 'orange fruit'
+              ]))
             }
           })
         }
       )
     }
 
-    this.initialAnimationWasShown = true
-
     await delay(300)
 
     {
-      const clear = async (vectors: I2DVector[]) => {
+      const clear = async (vectors: I2DDirectionVector[]) => {
         const
           scenarioConfig: IFromCellScenarioArguments = {
             columns, rows,
             cell: {
-              column: midCol,
+              column: midColumn,
               row: midRow,
             },
             vectors,
@@ -165,14 +193,14 @@ export class GridService {
           },
           scenario = makeFromCellScenario(scenarioConfig)
 
-        await runGridScenario(scenario, STEP_DELAY * 2, (data) => {
+        await runGridScenario(scenario, STEP_DELAY * 2.5, (data) => {
           data.forEach(({ column, row }) => {
             const
               id = grid[row][column],
               cell = this.getCell(id)
 
-            if (midCellId !== id) {
-              cell.content = ''
+            if (middleCellId !== id) {
+              cell.model = new EmptyModel()
             }
           })
         })
@@ -195,43 +223,49 @@ export class GridService {
       ])
     }
 
-    midCell.isHello = true
+    middleCell.model = new HelloEmojiModel(helloSymbol)
 
+    let beforeLastAnimationTimestamp = performance.now()
+    const helloAnimationTime = parseInt(cellStyles.helloAnimationTime)
 
-    await delay(800)
+    await delay(helloAnimationTime * .9)
 
     {
       const
-        scenarioConfig = { columns, rows },
-        scenario = makeSpiralScenario(scenarioConfig)
+        scenarioConfig: IFromCellScenarioArguments = {
+          columns, rows, cell: { column: midColumn, row: this.rows - 1 }, vectors: [
+            { x: 0, y: -1 },
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+          ]
+        },
+        scenario = makeFromCellScenario(scenarioConfig)
 
       await runGridScenario(
         scenario,
-        STEP_DELAY,
+        20,
         (data) => {
-          let stop = false
-
           data.forEach(({ column, row }) => {
             const
               id = grid[row][column],
               cell = this.getCell(id)
 
-            cell.content = ''
-
-            stop = row === CLEAR_OFFSET && column === CLEAR_OFFSET - 1
+            cell.model = new EmptyModel()
           })
-
-          if (stop) return true
         }
       )
     }
 
-    midCell.isHello = false
-    midCell.content = ''
+    const
+      endDelay = helloAnimationTime - (performance.now() - beforeLastAnimationTimestamp)
 
-    this.stopAnimation()
+    if (endDelay > 0) {
+      await delay(endDelay)
+    }
 
-    await this.showInitialAnimation()
+    middleCell.model = new EmptyModel()
+
+    this.initialAnimationWasShown = true
   }
 
   @computed
@@ -240,30 +274,14 @@ export class GridService {
   }
 
   @bind
-  getCell(id: string) {
+  getCell(id: string): ICell {
     return this.cells.get(id)!
-  }
-
-  constructor() {
-    this.isMobile = isMobile()
-
-    this.init()
-
-    window.addEventListener('resize', debounce(() => {
-      this.viewportSize = getViewportSize()
-    }, 500))
-
-    reaction(() => {
-      return this.viewportSize
-    }, () => {
-      this.isMobile = isMobile()
-      this.init()
-    })
   }
 }
 
 const makeGrid = () => {
   return new GridService()
 }
+
 
 export default makeGrid

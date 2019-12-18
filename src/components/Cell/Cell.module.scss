@@ -1,0 +1,85 @@
+@import '../../styles/abstract';
+
+$css-animations-duration: 1.4s;
+$hello-animation-time: 1200;
+
+:export {
+  helloAnimationTime: $hello-animation-time
+}
+
+.cell {
+  @include overlay;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+@keyframes hello-animation {
+  $rotate: 10deg;
+  $scale: 1.6;
+
+  0% {
+    transform: scale(1) translate3d(0, 0, 0) rotate(0);
+  }
+
+  22% {
+    transform: scale(.8 * $scale) translate3d(0, 0, 0) rotate(0);
+  }
+
+  34% {
+    transform: scale($scale) translate3d(0, 0, 0) rotate(-$rotate);
+  }
+
+  46% {
+    transform: scale($scale) translate3d(0, 0, 0) rotate($rotate);
+  }
+
+  58% {
+    transform: scale($scale) translate3d(0, 0, 0) rotate(-$rotate);
+  }
+
+  70% {
+    transform: scale($scale) translate3d(0, 0, 0) rotate($rotate);
+  }
+
+  84% {
+    transform: scale($scale) translate3d(0, 0, 0) rotate(-$rotate);
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  100% {
+    transform: scale($scale) translate3d(0, 0, 0) rotate(0);
+    filter: blur(10px);
+    opacity: 0;
+  }
+}
+
+.cellEmoji {
+  font-size: 26px;
+
+  @media screen and (max-width: 500px) {
+    font-size: 24px;
+  }
+
+  &.cellHelloEmoji {
+    animation: hello-animation 1ms * $hello-animation-time forwards;
+    transform: scale(1) translate3d(0, 0, 0) rotate(0);
+    transform-origin: 48% bottom;
+  }
+}
+
+.cellImage {
+
+}
+
+.cellIcon {
+
+}
+
+.cellMenu {
+  background: #561C1A;
+}

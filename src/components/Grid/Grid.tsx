@@ -1,7 +1,7 @@
 import React from 'react'
 import styles from './Grid.module.scss'
 import classNames from 'classnames'
-import Cell from '../Flipper'
+import Cell from '../Cell'
 import { useGrid } from '../../contextProviders/GridProvider'
 import { observer } from 'mobx-react'
 

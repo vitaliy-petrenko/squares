@@ -2,16 +2,6 @@ import { isEqual, uniqWith } from 'lodash'
 import { MAX_CELL_SIZE, MIN_CELL_SIZE } from '../constants'
 import { delay } from './scenario'
 
-export interface IGridParams {
-  columns: number
-  rows: number
-}
-
-export interface IViewportSize {
-  viewportWidth: number
-  viewportHeight: number
-}
-
 export const getViewportSize = (): IViewportSize => {
   const { innerHeight: viewportHeight, innerWidth: viewportWidth } = window
 
@@ -71,9 +61,25 @@ export const calculateGridSize = ({ viewportWidth, viewportHeight }: IViewportSi
   if (gridItemSize < MIN_CELL_SIZE) gridItemSize = MIN_CELL_SIZE
   if (gridItemSize > MAX_CELL_SIZE) gridItemSize = MAX_CELL_SIZE
 
-  const
-    columns = Math.min(Math.max(Math.round(viewportWidth / gridItemSize), minColumns), 45),
-    rows = Math.min(Math.max(Math.round(viewportHeight / gridItemSize), minRows), 30)
+  let
+    columns = Math.round(viewportWidth / gridItemSize),
+    rows = Math.round(viewportHeight / gridItemSize)
+
+  if (columns >= 25) {
+    columns = 25
+  } else if (columns <= minColumns) {
+    columns = minColumns
+  } else if (!(columns % 2)) {
+    columns++
+  }
+
+  if (rows >= 25) {
+    rows = 25
+  } else if (rows <= minRows) {
+    rows = minRows
+  } else if (!(rows % 2)) {
+    rows--
+  }
 
   return {
     columns,
@@ -88,7 +94,7 @@ export const calculateGridSize = ({ viewportWidth, viewportHeight }: IViewportSi
  7 6 5
  */
 
-export const getFlipDirectionKey = ({ x, y }: I2DVector): number => {
+export const getFlipDirectionKey = ({ x, y }: I2DDirectionVector): number => {
   if (x === 1) {
     if (y === 0) {
       return 4
@@ -116,16 +122,6 @@ export const getFlipDirectionKey = ({ x, y }: I2DVector): number => {
   }
 }
 
-export interface I2DVector {
-  x: number
-  y: number
-}
-
-export interface IGridCell {
-  column: number
-  row: number
-}
-
 export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
   [Symbol.asyncIterator]: async function* () {
     let
@@ -135,7 +131,7 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
       minRow = 0,
       maxColumn = columns,
       maxRow = rows,
-      vector: I2DVector = {
+      vector: I2DDirectionVector = {
         x: 1,
         y: 0
       }
@@ -209,15 +205,6 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
     }
   }
 })
-
-export interface IFromCellScenarioArguments extends IGridParams {
-  cell: IGridCell,
-  vectors: I2DVector[],
-  minColumn?: number
-  minRow?: number
-  maxColumn?: number
-  maxRow?: number
-}
 
 export const makeFromCellScenario = (
   { columns, rows, cell, vectors, minColumn, minRow, maxColumn, maxRow }: IFromCellScenarioArguments
