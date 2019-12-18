@@ -1,15 +1,10 @@
 import React from 'react'
+import { Properties as TCSSProperties } from 'csstype'
 import styles from './Cell.module.scss'
 import { observer } from 'mobx-react'
 import { useGrid } from '../../contextProviders/GridProvider'
 import classNames from 'classnames'
-import { EmojiModel, EmptyModel, HelloEmojiModel, TCellModel, TextModel } from '../../models/cell'
-
-const CellWrap: React.FC = ({ children }) => (
-  <div className={styles.cell}>
-    {children}
-  </div>
-)
+import { ColorModel, EmojiModel, HelloEmojiModel, TCellModel, TextModel } from '../../models/cell'
 
 const CellComponentFactory = observer(({ id }: { id: string }) => {
   const
@@ -30,33 +25,41 @@ const CellComponentFactory = observer(({ id }: { id: string }) => {
     component = <Text {...model}/>
   }
 
-  if (model instanceof EmptyModel) {
-    component = <></>
+  if (model instanceof ColorModel) {
+    component = <Color {...model}/>
   }
 
   return (
-    <CellWrap>
+    <>
       {component}
-    </CellWrap>
+    </>
   )
 })
 
-const Emoji: React.FC<EmojiModel> = (model) => (
-  <div className={classNames(styles.cellEmoji)}>
-    {model.content}
+const Emoji: React.FC<EmojiModel> = ({ content }) => (
+  <div className={classNames(styles.cell, styles.cellEmoji)}>
+    {content}
   </div>
 )
 
-const HelloEmoji: React.FC<HelloEmojiModel> = (model) => (
-  <div className={classNames(styles.cellEmoji, styles.cellHelloEmoji)}>
-    {model.content}
+const HelloEmoji: React.FC<HelloEmojiModel> = ({ content }) => (
+  <div className={classNames(styles.cell, styles.cellEmoji, styles.cellHelloEmoji)}>
+    {content}
   </div>
 )
 
-const Text: React.FC<TextModel> = (model) => (
-  <div className={styles.cellText}>
-    {model.content}
+const Text: React.FC<TextModel> = ({ content }) => (
+  <div className={classNames(styles.cell, styles.cellText)}>
+    {content}
   </div>
 )
+
+const Color: React.FC<ColorModel> = ({ color }) => {
+  const css: TCSSProperties = {}
+
+  css.background = color
+
+  return <div className={classNames(styles.cell)} style={css}/>
+}
 
 export default CellComponentFactory

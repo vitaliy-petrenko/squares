@@ -4,10 +4,8 @@ interface IHocProps {
 }
 
 const withContainerClass = <P extends object>(Component: React.ComponentType<P>, selector: string, className: string) => {
-  class HocComponent extends React.Component<P & IHocProps> {
-    constructor(props: P & IHocProps) {
-      super(props)
-
+  class WithContainerClass extends React.Component<P & IHocProps> {
+    componentDidMount(): void {
       const element = this.element
 
       element && element.classList.add(className)
@@ -26,14 +24,14 @@ const withContainerClass = <P extends object>(Component: React.ComponentType<P>,
       element && element.classList.remove(className)
     }
 
-    render() {
-      return (
-        <Component {...this.props as P} />
-      )
+    shouldComponentUpdate(): boolean {
+      return false
     }
+
+    render = () => <Component {...this.props as P} />
   }
 
-  return HocComponent
+  return WithContainerClass
 }
 
 export default withContainerClass

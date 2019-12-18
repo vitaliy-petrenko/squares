@@ -6,15 +6,13 @@ interface IHocProps {
 
 const withGridContext = <P extends object>(Component: React.ComponentType<P>) => {
   const
-    HocComponent: React.FC<P & IHocProps> = ({ ...props }) => {
-      return (
-        <GridProvider>
-          <Component {...props as P} />
-        </GridProvider>
-      )
-    }
+    WithGridContext: React.FC<P & IHocProps> = ({ ...props }) => (
+      <GridProvider>
+        <Component {...props as P} />
+      </GridProvider>
+    )
 
-  return HocComponent
+  return WithGridContext
 }
 
 export default withGridContext

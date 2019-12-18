@@ -1,6 +1,7 @@
 import { action, computed, observable, reaction } from 'mobx'
 import {
   calculateGridSize,
+  getMatrixMidPoint,
   getMenuPosition,
   getViewportSize,
   isMobileMode,
@@ -14,7 +15,7 @@ import { searchRandomEmoji } from '../helpers/emoji'
 import { delay } from '../helpers/scenario'
 import bind from '../decorators/bind'
 import cellStyles from '../components/Cell/Cell.module.scss'
-import { EmojiModel, EmptyModel, HelloEmojiModel, TCellModel } from '../models/cell'
+import { ColorModel, EmojiModel, EmptyModel, HelloEmojiModel, TCellModel } from '../models/cell'
 
 export enum EViews { initial, application, snake }
 
@@ -32,30 +33,15 @@ export class GridService {
   @observable.struct viewportSize = getViewportSize()
   @observable isMobile: boolean = isMobileMode()
   @observable isPortrait: boolean = isPortraitMode()
-
-  @observable
-  private view: EViews = EViews.initial
-
   @observable
   grid: string[][] = []
-
+  @observable
+  private view: EViews = EViews.initial
   @observable
   private cells = new Map<string, ICell>()
-
-  @computed
-  private get menuPosition(): IMenuPosition {
-    const { columns, rows, isMobile, isPortrait } = this
-
-    return getMenuPosition({ columns, rows, isMobile, isPortrait })
-  }
-
-  @computed
-  private get pageLeftCornerPosition(): IGridCell {
-    return {
-      column: 0,
-      row: 0
-    }
-  }
+  private initialAnimationWasShown = false
+  private isAnimationRun = false
+  private initWasRequested = false
 
   constructor() {
     this.init()
@@ -75,52 +61,30 @@ export class GridService {
     })
   }
 
-  @action
-  private initGrid() {
-    let result: string[][] = []
-
-    this.cells.clear()
-
-    for (let row = 0; row < this.rows; row++) {
-      result.push([])
-
-      for (let column = 0; column < this.columns; column++) {
-        const cellId = `${row}-${column}`
-
-        result[row].push(cellId)
-
-        this.cells.set(cellId, {
-          model: new EmptyModel()
-        })
-      }
-    }
-
-    this.grid = result
+  @computed
+  get middleCell(): IGridCell {
+    return getMatrixMidPoint(this.grid)
   }
 
-  private async init() {
-    if (this.isAnimationRun) {
-      this.initWasRequested = true
-      return
-    }
-
-    const { columns, rows } = calculateGridSize(this.viewportSize)
-
-    this.columns = columns
-    this.rows = rows
-
-    this.initGrid()
-
-    if (!this.initialAnimationWasShown) {
-      await delay(1000)
-      this.showInitialAnimation()
-    }
+  @computed
+  get square() {
+    return this.columns * this.rows
   }
 
-  private initialAnimationWasShown = false
+  @computed
+  private get menuPosition(): IMenuPosition {
+    const { columns, rows, isMobile, isPortrait } = this
 
-  private isAnimationRun = false
-  private initWasRequested = false
+    return getMenuPosition({ columns, rows, isMobile, isPortrait })
+  }
+
+  @computed
+  private get pageLeftCornerPosition(): IGridCell {
+    return {
+      column: 0,
+      row: 0
+    }
+  }
 
   startAnimation() {
     this.isAnimationRun = true
@@ -136,21 +100,12 @@ export class GridService {
     this.initWasRequested = false
   }
 
-  private withAnimationDecorator(method: Function) {
-    return async (...args: any) => {
-      this.startAnimation()
-      await method.apply(this, args)
-      this.stopAnimation()
-    }
-  }
-
   async showInitialAnimation() {
     const
       { columns, rows, grid, isMobile } = this,
       CLEAR_OFFSET = 1,
-      STEP_DELAY = isMobile ? 15 : 10,
-      midColumn = Math.floor(columns / 2),
-      midRow = Math.floor(rows / 2),
+      STEP_DELAY = isMobile ? 15 : 8,
+      { column: midColumn, row: midRow } = this.middleCell,
       middleCellId = grid[midRow][midColumn],
       middleCell = this.getCell(middleCellId),
       helloSymbol = '✋'
@@ -207,7 +162,7 @@ export class GridService {
               cell = this.getCell(id)
 
             if (middleCellId !== id) {
-              cell.model = new EmptyModel()
+              this.clearCell(cell)
             }
           })
         })
@@ -257,7 +212,7 @@ export class GridService {
               id = grid[row][column],
               cell = this.getCell(id)
 
-            cell.model = new EmptyModel()
+            this.clearCell(cell)
           })
         }
       )
@@ -270,19 +225,145 @@ export class GridService {
       await delay(endDelay)
     }
 
-    middleCell.model = new EmptyModel()
+    this.clearCell(middleCell)
 
-    this.initialAnimationWasShown = true
-  }
+    // this.initialAnimationWasShown = true
 
-  @computed
-  get square() {
-    return this.columns * this.rows
+    await this.place404()
+
+    await this.showInitialAnimation()
   }
 
   @bind
   getCell(id: string): ICell {
     return this.cells.get(id)!
+  }
+
+  clearCell = (cell: ICell): void => {
+    cell.model = new EmptyModel()
+  }
+
+  async place404() {
+    const
+      // #321A4F, #16203A, #103234
+      c1 = '#5a2f8e',
+      c2 = 'transparent',
+      c3 = '#267479'
+
+    const array404 = (this.isMobile && this.isPortrait) ? [
+      [c1, c2, c1],
+      [c1, c1, c1],
+      [c2, c2, c1],
+      [c3, c3, c3],
+      [c3, c2, c3],
+      [c3, c3, c3],
+      [c1, c2, c1],
+      [c1, c1, c1],
+      [c2, c2, c1],
+    ] : [
+      [c1, c2, c1, c3, c3, c3, c1, c2, c1],
+      [c1, c1, c1, c3, c2, c3, c1, c1, c1],
+      [c2, c2, c1, c3, c3, c3, c2, c2, c1],
+    ]
+
+    const
+      columns404 = array404[0].length,
+      rows404 = array404.length,
+      scenarioConfig: IFromCellScenarioArguments = {
+        columns: columns404, rows: rows404, cell: getMatrixMidPoint(array404), vectors: [
+          { x: -1, y: 1 },
+          { x: -1, y: -1 },
+          { x: 0, y: -1 },
+          { x: 1, y: -1 },
+          { x: 1, y: 1 },
+          { x: 0, y: 1 },
+        ]
+      },
+      scenario = makeFromCellScenario(scenarioConfig),
+      middleCell = this.middleCell,
+      getWithShift = ({ row, column }: IGridCell): string => {
+        return this.grid[row + middleCell.row - getMatrixMidPoint(array404).row][column + middleCell.column - getMatrixMidPoint(array404).column]
+      }
+
+    await runGridScenario(
+      scenario,
+      80,
+      (data) => {
+        data.forEach(({ column, row }) => {
+          const
+            id = getWithShift({ column, row }),
+            cell = this.getCell(id)
+
+          const color = array404[row][column]
+
+          if (color) {
+            cell.model = new ColorModel(array404[row][column])
+          }
+        })
+      }
+    )
+
+    await delay(500)
+
+    await runGridScenario(
+      scenario,
+      80,
+      (data) => {
+        data.forEach(({ column, row }) => {
+          this.clearCell(this.getCell(getWithShift({ column, row })))
+        })
+      }
+    )
+  }
+
+  @action
+  private initGrid() {
+    let result: string[][] = []
+
+    this.cells.clear()
+
+    for (let row = 0; row < this.rows; row++) {
+      result.push([])
+
+      for (let column = 0; column < this.columns; column++) {
+        const cellId = `${row}-${column}`
+
+        result[row].push(cellId)
+
+        this.cells.set(cellId, {
+          model: new EmptyModel()
+        })
+      }
+    }
+
+    this.grid = result
+  }
+
+  private async init() {
+    if (this.isAnimationRun) {
+      this.initWasRequested = true
+      return
+    }
+
+    const { columns, rows } = calculateGridSize(this.viewportSize)
+
+    this.columns = columns
+    this.rows = rows
+
+    this.initGrid()
+
+    if (!this.initialAnimationWasShown) {
+      await delay(1000)
+      this.showInitialAnimation()
+    }
+  }
+
+  private withAnimationDecorator(method: Function) {
+    return async (...args: any) => {
+      this.startAnimation()
+      await method.apply(this, args)
+      this.stopAnimation()
+    }
   }
 }
 

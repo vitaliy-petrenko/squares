@@ -14,7 +14,7 @@ export const getViewportSize = (): IViewportSize => {
 export const isPortraitMode = (): boolean => {
   const { viewportWidth, viewportHeight } = getViewportSize()
 
-  return viewportWidth > viewportHeight
+  return viewportWidth < viewportHeight
 }
 
 export const isMobileMode = (): boolean => {
@@ -284,3 +284,14 @@ export const getMenuPosition =
       }
     }
   }
+
+export const getMatrixMidPoint = <T>(matrix: T[][]): IGridCell => {
+  let
+    row = Math.floor(matrix.length / 2),
+    column = Math.floor(matrix[0].length / 2)
+
+  return {
+    row,
+    column
+  }
+}
