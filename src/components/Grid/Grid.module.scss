@@ -1,16 +1,20 @@
 @import '../../styles/abstract';
 
 $minCellSize: 40px;
-$maxCellSize: 100px;
 
 :export {
   minCellSize: $minCellSize;
-  maxCellSize: $maxCellSize;
+}
+
+.gridWrapper {
+  background: linear-gradient(45deg, #321A4F, #16203A, #103234);
+  min-width: 100%;
+  min-height: 100%;
+  overflow: hidden;
 }
 
 .grid {
   color: #AED0AB;
-  background: linear-gradient(to right top, #321A4F, #16203A, #103234); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
 
   @include overlay;
   position: fixed;

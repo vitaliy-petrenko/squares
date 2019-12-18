@@ -1,8 +1,10 @@
 import { action, computed, observable, reaction } from 'mobx'
 import {
   calculateGridSize,
+  getMenuPosition,
   getViewportSize,
-  isMobile,
+  isMobileMode,
+  isPortraitMode,
   makeFromCellScenario,
   makeSpiralScenario,
   runGridScenario
@@ -28,7 +30,8 @@ export class GridService {
   rows: number = 0
 
   @observable.struct viewportSize = getViewportSize()
-  @observable isMobile: boolean = false
+  @observable isMobile: boolean = isMobileMode()
+  @observable isPortrait: boolean = isPortraitMode()
 
   @observable
   private view: EViews = EViews.initial
@@ -39,19 +42,22 @@ export class GridService {
   @observable
   private cells = new Map<string, ICell>()
 
-  private menuPosition: IGridCell = {
-    column: 0,
-    row: 0
+  @computed
+  private get menuPosition(): IMenuPosition {
+    const { columns, rows, isMobile, isPortrait } = this
+
+    return getMenuPosition({ columns, rows, isMobile, isPortrait })
   }
 
-  private pagePosition: IGridCell = {
-    column: 0,
-    row: 0
+  @computed
+  private get pageLeftCornerPosition(): IGridCell {
+    return {
+      column: 0,
+      row: 0
+    }
   }
 
   constructor() {
-    this.isMobile = isMobile()
-
     this.init()
 
     this.showInitialAnimation = this.withAnimationDecorator(this.showInitialAnimation)
@@ -63,7 +69,8 @@ export class GridService {
     reaction(() => {
       return this.viewportSize
     }, () => {
-      this.isMobile = isMobile()
+      this.isMobile = isMobileMode()
+      this.isPortrait = isPortraitMode()
       this.init()
     })
   }

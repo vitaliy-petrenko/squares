@@ -1,7 +1,7 @@
 import {
   calculateGridSize,
   getFilledMatrix,
-  getFlipDirectionKey,
+  getMenuPosition,
   getMinGridSize,
   makeFromCellScenario,
   makeSpiralScenario,
@@ -151,24 +151,40 @@ describe('make matrix from cell helper', () => {
   })
 })
 
-describe('getFlipDirectionKey helper', () => {
-  /**
-   1 2 3
-   8 x 4
-   7 6 5
-   */
+describe('menu position helper', () => {
+  it('right on desktop', () => {
+    const
+      position = getMenuPosition({ columns: 10, rows: 10, isMobile: false, isPortrait: false }),
+      result: IMenuPosition = {
+        column: 9,
+        row: 1,
+        vector: { x: 0, y: 1 }
+      }
 
-  it('must return right direction', () => {
-    const directions = [
-      [{ x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 }],
-      [{ x: -1, y: 0 }, { x: 0, y: 0 }, { x: 1, y: 0 }],
-      [{ x: -1, y: 1 }, { x: 0, y: 1 }, { x: 1, y: 1 }],
-    ].map(row => row.map(getFlipDirectionKey))
+    expect(position).toEqual(result)
+  })
 
-    expect(directions).toEqual([
-      [1, 2, 3],
-      [8, 4, 4],
-      [7, 6, 5],
-    ])
+  it('right on mobile', () => {
+    const
+      position = getMenuPosition({ columns: 10, rows: 10, isMobile: true, isPortrait: false }),
+      result: IMenuPosition = {
+        column: 9,
+        row: 1,
+        vector: { x: 0, y: 1 }
+      }
+
+    expect(position).toEqual(result)
+  })
+
+  it('right on mobile (portrait)', () => {
+    const
+      position = getMenuPosition({ columns: 10, rows: 10, isMobile: true, isPortrait: true }),
+      result: IMenuPosition = {
+        column: 1,
+        row: 9,
+        vector: { x: 1, y: 0 }
+      }
+
+    expect(position).toEqual(result)
   })
 })

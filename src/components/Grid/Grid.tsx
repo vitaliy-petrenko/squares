@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import Cell from '../Cell'
 import { useGrid } from '../../contextProviders/GridProvider'
 import { observer } from 'mobx-react'
+import withContainerClass from '../../hoc/withContainerClass'
 
 const Grid = observer(() => {
   const { grid } = useGrid()
@@ -41,4 +42,4 @@ const Col: React.FC = ({ children }) => {
   )
 }
 
-export default Grid
+export default withContainerClass(Grid, 'html', styles.gridWrapper)

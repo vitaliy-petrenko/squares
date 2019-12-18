@@ -9,8 +9,8 @@ interface IGridCell {
 }
 
 interface IFromCellScenarioArguments extends IGridParams {
-  cell: IGridCell,
-  vectors: I2DDirectionVector[],
+  cell: IGridCell
+  vectors: I2DDirectionVector[]
   minColumn?: number
   minRow?: number
   maxColumn?: number
@@ -27,5 +27,11 @@ interface IViewportSize {
   viewportHeight: number
 }
 
-type TFlipperContent = string | null
+interface IGetMenuPositionArguments extends IGridParams {
+  isMobile: boolean
+  isPortrait: boolean
+}
 
+interface IMenuPosition extends IGridCell {
+  vector: I2DDirectionVector
+}

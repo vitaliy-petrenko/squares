@@ -1,5 +1,5 @@
 import { isEqual, uniqWith } from 'lodash'
-import { MAX_CELL_SIZE, MIN_CELL_SIZE } from '../constants'
+import { MIN_CELL_SIZE } from '../constants'
 import { delay } from './scenario'
 
 export const getViewportSize = (): IViewportSize => {
@@ -11,10 +11,18 @@ export const getViewportSize = (): IViewportSize => {
   }
 }
 
-const isPortraitMode = (): boolean => {
+export const isPortraitMode = (): boolean => {
   const { viewportWidth, viewportHeight } = getViewportSize()
 
   return viewportWidth > viewportHeight
+}
+
+export const isMobileMode = (): boolean => {
+  const
+    { minColumns, minRows } = getDesktopMinColumnsAndRows(),
+    { viewportHeight, viewportWidth } = getViewportSize()
+
+  return viewportWidth <= MIN_CELL_SIZE * minColumns || viewportHeight <= MIN_CELL_SIZE * minRows
 }
 
 export const getDesktopMinColumnsAndRows = () => ({
@@ -32,34 +40,18 @@ export const getMobileMinColumnsAndRows = () => {
   }
 }
 
-const getMinAndMaxCellSize = () => ({
-  MIN_CELL_SIZE,
-  MAX_CELL_SIZE
-})
-
-export const isMobile = () => {
-  const
-    { MIN_CELL_SIZE } = getMinAndMaxCellSize(),
-    { minColumns, minRows } = getDesktopMinColumnsAndRows(),
-    { viewportHeight, viewportWidth } = getViewportSize()
-
-  return viewportWidth <= MIN_CELL_SIZE * minColumns || viewportHeight <= MIN_CELL_SIZE * minRows
-}
-
 export const getMinGridSize = () => (
-  isMobile() ? getMobileMinColumnsAndRows() : getDesktopMinColumnsAndRows()
+  isMobileMode() ? getMobileMinColumnsAndRows() : getDesktopMinColumnsAndRows()
 )
 
 export const calculateGridSize = ({ viewportWidth, viewportHeight }: IViewportSize): IGridParams => {
   const
-    { MIN_CELL_SIZE, MAX_CELL_SIZE } = getMinAndMaxCellSize(),
     { minColumns, minRows } = getMinGridSize()
 
   let
     gridItemSize = Math.min(viewportHeight / minRows, viewportWidth / minColumns)
 
   if (gridItemSize < MIN_CELL_SIZE) gridItemSize = MIN_CELL_SIZE
-  if (gridItemSize > MAX_CELL_SIZE) gridItemSize = MAX_CELL_SIZE
 
   let
     columns = Math.round(viewportWidth / gridItemSize),
@@ -84,41 +76,6 @@ export const calculateGridSize = ({ viewportWidth, viewportHeight }: IViewportSi
   return {
     columns,
     rows,
-  }
-}
-
-
-/**
- 1 2 3
- 8 x 4
- 7 6 5
- */
-
-export const getFlipDirectionKey = ({ x, y }: I2DDirectionVector): number => {
-  if (x === 1) {
-    if (y === 0) {
-      return 4
-    } else if (y === 1) {
-      return 5
-    } else {
-      return 3
-    }
-  } else if (x === 0) {
-    if (y === 1) {
-      return 6
-    } else if (y === 0) {
-      return 4
-    } else {
-      return 2
-    }
-  } else {
-    if (y === 0) {
-      return 8
-    } else if (y === 1) {
-      return 7
-    } else {
-      return 1
-    }
   }
 }
 
@@ -304,3 +261,26 @@ export const getFilledMatrix = <T>({ columns, rows, value }: IGridParams & { val
 
   return result
 }
+
+export const getMenuPosition =
+  ({ columns, rows, isMobile, isPortrait }: IGetMenuPositionArguments): IMenuPosition => {
+    if (!isMobile || (isMobile && !isPortrait)) {
+      return {
+        column: columns - 1,
+        row: 1,
+        vector: {
+          x: 0,
+          y: 1,
+        },
+      }
+    } else {
+      return {
+        column: 1,
+        row: rows - 1,
+        vector: {
+          x: 1,
+          y: 0,
+        }
+      }
+    }
+  }
