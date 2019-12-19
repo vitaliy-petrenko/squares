@@ -1,6 +1,11 @@
 import { isEqual, uniqWith } from 'lodash'
 import { MIN_CELL_SIZE } from '../constants'
-import { delay } from './scenario'
+
+export const delay = (ms: number) => {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms)
+  })
+}
 
 export const getViewportSize = (): IViewportSize => {
   const { innerHeight: viewportHeight, innerWidth: viewportWidth } = window
@@ -26,17 +31,14 @@ export const isMobileMode = (): boolean => {
 }
 
 export const getDesktopMinColumnsAndRows = () => ({
-  minColumns: 12,
+  minColumns: 11,
   minRows: 11,
 })
 
 export const getMobileMinColumnsAndRows = () => {
-  const isPortrait = isPortraitMode()
-
-
   return {
-    minColumns: isPortrait ? 8 : 7,
-    minRows: isPortrait ? 7 : 8,
+    minColumns: 7,
+    minRows: 7,
   }
 }
 
@@ -234,12 +236,20 @@ export const makeFromCellScenario = (
 })
 
 export const runGridScenario = async (
-  scenario: AsyncIterable<IGridCell[]>,
+  scenario: TGridScenario,
   stepDelay: number,
-  process: (data: IGridCell[]) => true | void
+  process: TRunScenarioProcessFunction,
+  stopChecker?: () => boolean
 ) => {
-  for await (const data of scenario) {
-    const result = process(data)
+  if (stopChecker && stopChecker()) return
+
+  for await (const cells of scenario) {
+    // console.log(stopChecker && stopChecker())
+    if (stopChecker && stopChecker()) {
+      break
+    }
+
+    const result = process(cells)
 
     if (result) break
 

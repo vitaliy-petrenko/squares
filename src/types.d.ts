@@ -35,3 +35,7 @@ interface IGetMenuPositionArguments extends IGridParams {
 interface IMenuPosition extends IGridCell {
   vector: I2DDirectionVector
 }
+
+type TGridScenario = AsyncIterable<IGridCell[]>
+type TStopScenario = true | void
+type TRunScenarioProcessFunction = (cells: IGridCell[]) => TStopScenario

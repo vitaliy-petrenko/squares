@@ -1,6 +1,8 @@
 import { action, computed, observable, reaction } from 'mobx'
+import { debounce } from 'lodash'
 import {
   calculateGridSize,
+  delay,
   getMatrixMidPoint,
   getMenuPosition,
   getViewportSize,
@@ -8,11 +10,9 @@ import {
   isPortraitMode,
   makeFromCellScenario,
   makeSpiralScenario,
-  runGridScenario
+  runGridScenario,
 } from '../helpers/grid'
-import { debounce } from 'lodash'
 import { searchRandomEmoji } from '../helpers/emoji'
-import { delay } from '../helpers/scenario'
 import bind from '../decorators/bind'
 import cellStyles from '../components/Cell/Cell.module.scss'
 import { ColorModel, EmojiModel, EmptyModel, HelloEmojiModel, TCellModel } from '../models/cell'
@@ -44,21 +44,45 @@ export class GridService {
   private initWasRequested = false
 
   constructor() {
-    this.init()
-
     this.showInitialAnimation = this.withAnimationDecorator(this.showInitialAnimation)
+    this.place404 = this.withAnimationDecorator(this.place404)
 
     window.addEventListener('resize', debounce(() => {
       this.viewportSize = getViewportSize()
-    }, 500))
+    }, 400))
 
     reaction(() => {
       return this.viewportSize
     }, () => {
-      this.isMobile = isMobileMode()
-      this.isPortrait = isPortraitMode()
       this.init()
     })
+
+    this.init()
+  }
+
+  private async init() {
+    if (this.isAnimationRun) {
+      this.initWasRequested = true
+      return
+    }
+
+    const { columns, rows } = calculateGridSize(this.viewportSize)
+
+    this.columns = columns
+    this.rows = rows
+    this.isMobile = isMobileMode()
+    this.isPortrait = isPortraitMode()
+
+    this.initGrid()
+
+    while (!this.isAnimationCanceled()) {
+      if (!this.initialAnimationWasShown) {
+        await this.delayAnimation(1000)
+        await this.showInitialAnimation()
+      }
+
+      await this.place404()
+    }
   }
 
   @computed
@@ -100,47 +124,57 @@ export class GridService {
     this.initWasRequested = false
   }
 
+  @bind
+  isAnimationCanceled() {
+    return this.initWasRequested
+  }
+
+  async delayAnimation(ms: number) {
+    if (!this.isAnimationCanceled()) {
+      await delay(ms)
+    }
+  }
+
   async showInitialAnimation() {
     const
       { columns, rows, grid, isMobile } = this,
-      CLEAR_OFFSET = 1,
       STEP_DELAY = isMobile ? 15 : 8,
       { column: midColumn, row: midRow } = this.middleCell,
       middleCellId = grid[midRow][midColumn],
-      middleCell = this.getCell(middleCellId),
-      helloSymbol = '✋'
+      middleCell = this.getCellData(middleCellId)
 
     {
       const
         scenarioConfig = { columns, rows },
-        scenario = makeSpiralScenario(scenarioConfig)
+        scenario = makeSpiralScenario(scenarioConfig),
+        iteration = ({ column, row }: IGridCell) => {
+          const
+            id = grid[row][column],
+            cell = this.getCellData(id)
 
-      await runGridScenario(
+          if (middleCellId === id) {
+            middleCell.model = new EmojiModel(HelloEmojiModel.symbol)
+          } else {
+            cell.model = new EmojiModel(searchRandomEmoji([
+              'snow', 'happy', 'santa', 'gift', 'family', 'beer', 'coffee', 'cup tea', 'glass wine', 'celebration', 'orange fruit'
+            ]))
+          }
+        },
+        process: TRunScenarioProcessFunction = cells => cells.forEach(iteration)
+
+      await this.runAnimationScenario(
         scenario,
         STEP_DELAY,
-        (data) => {
-          data.forEach(({ column, row }) => {
-            const
-              id = grid[row][column],
-              cell = this.getCell(id)
-
-            if (middleCellId === id) {
-              middleCell.model = new EmojiModel(helloSymbol)
-            } else {
-              cell.model = new EmojiModel(searchRandomEmoji([
-                'snow', 'happy', 'santa', 'gift', 'family', 'beer', 'coffee', 'cup tea', 'glass wine', 'celebration', 'orange fruit'
-              ]))
-            }
-          })
-        }
+        process,
       )
     }
 
-    await delay(300)
+    await this.delayAnimation(300)
 
     {
       const clear = async (vectors: I2DDirectionVector[]) => {
         const
+          CLEAR_OFFSET = 1,
           scenarioConfig: IFromCellScenarioArguments = {
             columns, rows,
             cell: {
@@ -153,19 +187,23 @@ export class GridService {
             maxColumn: columns - CLEAR_OFFSET,
             maxRow: rows - CLEAR_OFFSET,
           },
-          scenario = makeFromCellScenario(scenarioConfig)
-
-        await runGridScenario(scenario, STEP_DELAY * 2.5, (data) => {
-          data.forEach(({ column, row }) => {
+          scenario = makeFromCellScenario(scenarioConfig),
+          iteration = ({ column, row }: IGridCell) => {
             const
               id = grid[row][column],
-              cell = this.getCell(id)
+              cell = this.getCellData(id)
 
             if (middleCellId !== id) {
               this.clearCell(cell)
             }
-          })
-        })
+          },
+          process: TRunScenarioProcessFunction = cells => cells.forEach(iteration)
+
+        await this.runAnimationScenario(
+          scenario,
+          STEP_DELAY * 2.5,
+          process,
+        )
       }
 
       !isMobile && await clear([
@@ -185,12 +223,12 @@ export class GridService {
       ])
     }
 
-    middleCell.model = new HelloEmojiModel(helloSymbol)
+    middleCell.model = new HelloEmojiModel()
 
     let beforeLastAnimationTimestamp = performance.now()
     const helloAnimationTime = parseInt(cellStyles.helloAnimationTime)
 
-    await delay(helloAnimationTime * .9)
+    await this.delayAnimation(helloAnimationTime * .9)
 
     {
       const
@@ -201,20 +239,20 @@ export class GridService {
             { x: -1, y: 0 },
           ]
         },
-        scenario = makeFromCellScenario(scenarioConfig)
+        scenario = makeFromCellScenario(scenarioConfig),
+        iteration = ({ column, row }: IGridCell) => {
+          const
+            id = grid[row][column],
+            cell = this.getCellData(id)
 
-      await runGridScenario(
+          this.clearCell(cell)
+        },
+        process: TRunScenarioProcessFunction = cells => cells.forEach(iteration)
+
+      await this.runAnimationScenario(
         scenario,
         20,
-        (data) => {
-          data.forEach(({ column, row }) => {
-            const
-              id = grid[row][column],
-              cell = this.getCell(id)
-
-            this.clearCell(cell)
-          })
-        }
+        process,
       )
     }
 
@@ -222,32 +260,28 @@ export class GridService {
       endDelay = helloAnimationTime - (performance.now() - beforeLastAnimationTimestamp)
 
     if (endDelay > 0) {
-      await delay(endDelay)
+      await this.delayAnimation(endDelay)
     }
 
     this.clearCell(middleCell)
 
-    // this.initialAnimationWasShown = true
-
-    await this.place404()
-
-    await this.showInitialAnimation()
+    this.initialAnimationWasShown = true
   }
 
   @bind
-  getCell(id: string): ICell {
+  getCellData(id: string): ICell {
     return this.cells.get(id)!
   }
 
   clearCell = (cell: ICell): void => {
-    cell.model = new EmptyModel()
+    if (cell && !(cell.model instanceof EmptyModel)) cell.model = new EmptyModel()
   }
 
   async place404() {
     const
       // #321A4F, #16203A, #103234
       c1 = '#5a2f8e',
-      c2 = 'transparent',
+      c2 = null,
       c3 = '#267479'
 
     const array404 = (this.isMobile && this.isPortrait) ? [
@@ -270,49 +304,43 @@ export class GridService {
       columns404 = array404[0].length,
       rows404 = array404.length,
       scenarioConfig: IFromCellScenarioArguments = {
-        columns: columns404, rows: rows404, cell: getMatrixMidPoint(array404), vectors: [
-          { x: -1, y: 1 },
-          { x: -1, y: -1 },
-          { x: 0, y: -1 },
-          { x: 1, y: -1 },
-          { x: 1, y: 1 },
+        columns: columns404, rows: rows404, cell: { column: 0, row: 0 }, vectors: [
           { x: 0, y: 1 },
+          { x: 1, y: 1 },
+          { x: 1, y: 0 },
         ]
       },
       scenario = makeFromCellScenario(scenarioConfig),
       middleCell = this.middleCell,
       getWithShift = ({ row, column }: IGridCell): string => {
         return this.grid[row + middleCell.row - getMatrixMidPoint(array404).row][column + middleCell.column - getMatrixMidPoint(array404).column]
-      }
+      },
+      iteration = ({ column, row }: IGridCell) => {
+        const
+          id = getWithShift({ column, row }),
+          cell = this.getCellData(id)
 
-    await runGridScenario(
+        const color = array404[row][column]
+
+        if (color) {
+          cell.model = new ColorModel(color)
+        }
+      },
+      process: TRunScenarioProcessFunction = cells => cells.forEach(iteration)
+
+    await this.runAnimationScenario(
       scenario,
-      80,
-      (data) => {
-        data.forEach(({ column, row }) => {
-          const
-            id = getWithShift({ column, row }),
-            cell = this.getCell(id)
-
-          const color = array404[row][column]
-
-          if (color) {
-            cell.model = new ColorModel(array404[row][column])
-          }
-        })
-      }
+      100,
+      process,
     )
 
-    await delay(500)
+    await this.delayAnimation(500)
 
-    await runGridScenario(
+    await this.runAnimationScenario(
       scenario,
-      80,
-      (data) => {
-        data.forEach(({ column, row }) => {
-          this.clearCell(this.getCell(getWithShift({ column, row })))
-        })
-      }
+      40,
+      cells => cells.forEach(({ column, row }) =>
+        this.clearCell(this.getCellData(getWithShift({ column, row })))),
     )
   }
 
@@ -339,31 +367,18 @@ export class GridService {
     this.grid = result
   }
 
-  private async init() {
-    if (this.isAnimationRun) {
-      this.initWasRequested = true
-      return
-    }
-
-    const { columns, rows } = calculateGridSize(this.viewportSize)
-
-    this.columns = columns
-    this.rows = rows
-
-    this.initGrid()
-
-    if (!this.initialAnimationWasShown) {
-      await delay(1000)
-      this.showInitialAnimation()
-    }
-  }
-
   private withAnimationDecorator(method: Function) {
     return async (...args: any) => {
+      if (this.isAnimationCanceled()) return
+
       this.startAnimation()
       await method.apply(this, args)
       this.stopAnimation()
     }
+  }
+
+  private async runAnimationScenario(scenario: TGridScenario, stepDelay: number, process: TRunScenarioProcessFunction) {
+    await runGridScenario(scenario, stepDelay, process, this.isAnimationCanceled)
   }
 }
 

@@ -8,8 +8,8 @@ import { ColorModel, EmojiModel, HelloEmojiModel, TCellModel, TextModel } from '
 
 const CellComponentFactory = observer(({ id }: { id: string }) => {
   const
-    { getCell } = useGrid(),
-    model: TCellModel = getCell(id).model
+    { getCellData } = useGrid(),
+    model: TCellModel = getCellData(id).model
 
   let component
 
@@ -18,7 +18,7 @@ const CellComponentFactory = observer(({ id }: { id: string }) => {
   }
 
   if (model instanceof HelloEmojiModel) {
-    component = <HelloEmoji {...model}/>
+    component = <HelloEmoji/>
   }
 
   if (model instanceof TextModel) {
@@ -36,30 +36,30 @@ const CellComponentFactory = observer(({ id }: { id: string }) => {
   )
 })
 
-const Emoji: React.FC<EmojiModel> = ({ content }) => (
+export const Emoji: React.FC<EmojiModel> = ({ content }) => (
   <div className={classNames(styles.cell, styles.cellEmoji)}>
     {content}
   </div>
 )
 
-const HelloEmoji: React.FC<HelloEmojiModel> = ({ content }) => (
+export const HelloEmoji: React.FC = () => (
   <div className={classNames(styles.cell, styles.cellEmoji, styles.cellHelloEmoji)}>
-    {content}
+    {HelloEmojiModel.symbol}
   </div>
 )
 
-const Text: React.FC<TextModel> = ({ content }) => (
+export const Text: React.FC<TextModel> = ({ content }) => (
   <div className={classNames(styles.cell, styles.cellText)}>
     {content}
   </div>
 )
 
-const Color: React.FC<ColorModel> = ({ color }) => {
+export const Color: React.FC<ColorModel> = ({ color }) => {
   const css: TCSSProperties = {}
 
   css.background = color
 
-  return <div className={classNames(styles.cell)} style={css}/>
+  return <div className={classNames(styles.cell, styles.cellColor)} style={css}/>
 }
 
 export default CellComponentFactory

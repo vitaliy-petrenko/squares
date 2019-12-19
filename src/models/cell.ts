@@ -11,7 +11,8 @@ export class EmojiModel {
   }
 }
 
-export class HelloEmojiModel extends EmojiModel {
+export class HelloEmojiModel {
+  static symbol: string = '✋'
 }
 
 export class TextModel {
