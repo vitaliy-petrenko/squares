@@ -31,7 +31,7 @@ export const isMobileMode = (): boolean => {
 }
 
 export const getDesktopMinColumnsAndRows = () => ({
-  minColumns: 11,
+  minColumns: 13,
   minRows: 11,
 })
 
@@ -82,7 +82,7 @@ export const calculateGridSize = ({ viewportWidth, viewportHeight }: IViewportSi
 }
 
 export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
-  [Symbol.asyncIterator]: async function* () {
+  [Symbol.iterator]: function* () {
     let
       column = -1,
       row = 0,
@@ -168,7 +168,7 @@ export const makeSpiralScenario = ({ columns, rows }: IGridParams) => ({
 export const makeFromCellScenario = (
   { columns, rows, cell, vectors, minColumn, minRow, maxColumn, maxRow }: IFromCellScenarioArguments
 ) => ({
-  [Symbol.asyncIterator]: async function* () {
+  [Symbol.iterator]: function* () {
     let
       previousCells = [cell]
 

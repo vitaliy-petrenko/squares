@@ -36,6 +36,6 @@ interface IMenuPosition extends IGridCell {
   vector: I2DDirectionVector
 }
 
-type TGridScenario = AsyncIterable<IGridCell[]>
+type TGridScenario = Iterable<IGridCell[]>
 type TStopScenario = true | void
 type TRunScenarioProcessFunction = (cells: IGridCell[]) => TStopScenario

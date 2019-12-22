@@ -12,10 +12,10 @@ import {
   makeSpiralScenario,
   runGridScenario,
 } from '../helpers/grid'
-import { searchRandomEmoji } from '../helpers/emoji'
 import bind from '../decorators/bind'
 import cellStyles from '../components/Cell/Cell.module.scss'
-import { ColorModel, EmojiModel, EmptyModel, HelloEmojiModel, TCellModel } from '../models/cell'
+import { E_RAW_DATA_MODEL_TYPE, EmojiModel, EmptyModel, TCellModel, TextModel } from '../models/cell'
+import { CELL_CLASS_NAMES } from '../constants'
 
 export enum EViews { initial, application, snake }
 
@@ -58,31 +58,6 @@ export class GridService {
     })
 
     this.init()
-  }
-
-  private async init() {
-    if (this.isAnimationRun) {
-      this.initWasRequested = true
-      return
-    }
-
-    const { columns, rows } = calculateGridSize(this.viewportSize)
-
-    this.columns = columns
-    this.rows = rows
-    this.isMobile = isMobileMode()
-    this.isPortrait = isPortraitMode()
-
-    this.initGrid()
-
-    while (!this.isAnimationCanceled()) {
-      if (!this.initialAnimationWasShown) {
-        await this.delayAnimation(1000)
-        await this.showInitialAnimation()
-      }
-
-      await this.place404()
-    }
   }
 
   @computed
@@ -153,11 +128,9 @@ export class GridService {
             cell = this.getCellData(id)
 
           if (middleCellId === id) {
-            middleCell.model = new EmojiModel(HelloEmojiModel.symbol)
+            middleCell.model = new EmojiModel({ content: EmojiModel.HELLO_EMOJI })
           } else {
-            cell.model = new EmojiModel(searchRandomEmoji([
-              'snow', 'happy', 'santa', 'gift', 'family', 'beer', 'coffee', 'cup tea', 'glass wine', 'celebration', 'orange fruit'
-            ]))
+            cell.model = new EmojiModel()
           }
         },
         process: TRunScenarioProcessFunction = cells => cells.forEach(iteration)
@@ -223,7 +196,7 @@ export class GridService {
       ])
     }
 
-    middleCell.model = new HelloEmojiModel()
+    middleCell.model.setClassName(EmojiModel.HELLO_CLASS)
 
     let beforeLastAnimationTimestamp = performance.now()
     const helloAnimationTime = parseInt(cellStyles.helloAnimationTime)
@@ -264,8 +237,6 @@ export class GridService {
     }
 
     this.clearCell(middleCell)
-
-    this.initialAnimationWasShown = true
   }
 
   @bind
@@ -274,35 +245,53 @@ export class GridService {
   }
 
   clearCell = (cell: ICell): void => {
-    if (cell && !(cell.model instanceof EmptyModel)) cell.model = new EmptyModel()
+    if (!(cell.model instanceof EmptyModel)) {
+      cell.model = new EmptyModel()
+    } else if (!cell.model.isClean) {
+      cell.model.clear()
+    }
   }
 
   async place404() {
     const
-      // #321A4F, #16203A, #103234
-      c1 = '#5a2f8e',
+      c1 = CELL_CLASS_NAMES.cell404Color1,
       c2 = null,
-      c3 = '#267479'
+      c3 = CELL_CLASS_NAMES.cell404Color2
 
-    const array404 = (this.isMobile && this.isPortrait) ? [
-      [c1, c2, c1],
-      [c1, c1, c1],
-      [c2, c2, c1],
-      [c3, c3, c3],
-      [c3, c2, c3],
-      [c3, c3, c3],
-      [c1, c2, c1],
-      [c1, c1, c1],
-      [c2, c2, c1],
-    ] : [
-      [c1, c2, c1, c3, c3, c3, c1, c2, c1],
-      [c1, c1, c1, c3, c2, c3, c1, c1, c1],
-      [c2, c2, c1, c3, c3, c3, c2, c2, c1],
-    ]
+    let
+      cellType = E_RAW_DATA_MODEL_TYPE.EMPTY,
+      array404 = (this.isMobile && this.isPortrait) ? [
+        [c1, c2, c1],
+        [c1, c1, c1],
+        [c2, c2, c1],
+        [c3, c3, c3],
+        [c3, c2, c3],
+        [c3, c3, c3],
+        [c1, c2, c1],
+        [c1, c1, c1],
+        [c2, c2, c1],
+      ] : [
+        [c1, c2, c1, c3, c3, c3, c1, c2, c1],
+        [c1, c1, c1, c3, c2, c3, c1, c1, c1],
+        [c2, c2, c1, c3, c3, c3, c2, c2, c1],
+      ]
+
+    if (this.isMobile) {
+      if ((this.isPortrait && (this.rows - 3 < array404.length)) || this.columns - 3 < array404[0].length) {
+        array404 = [
+          ['4', '0', '4'],
+        ]
+        cellType = E_RAW_DATA_MODEL_TYPE.TEXT
+      }
+    }
+
 
     const
       columns404 = array404[0].length,
       rows404 = array404.length,
+      middleCell = this.middleCell,
+      shiftRow = middleCell.row - getMatrixMidPoint(array404).row,
+      shiftColumn = middleCell.column - getMatrixMidPoint(array404).column,
       scenarioConfig: IFromCellScenarioArguments = {
         columns: columns404, rows: rows404, cell: { column: 0, row: 0 }, vectors: [
           { x: 0, y: 1 },
@@ -311,37 +300,75 @@ export class GridService {
         ]
       },
       scenario = makeFromCellScenario(scenarioConfig),
-      middleCell = this.middleCell,
       getWithShift = ({ row, column }: IGridCell): string => {
-        return this.grid[row + middleCell.row - getMatrixMidPoint(array404).row][column + middleCell.column - getMatrixMidPoint(array404).column]
+        const
+          cellRow = row + shiftRow,
+          cellColumn = column + shiftColumn
+
+        return this.grid[cellRow] && this.grid[cellRow][cellColumn]
       },
       iteration = ({ column, row }: IGridCell) => {
-        const
-          id = getWithShift({ column, row }),
-          cell = this.getCellData(id)
+        const id = getWithShift({ column, row })
 
-        const color = array404[row][column]
+        if (!id) return
 
-        if (color) {
-          cell.model = new ColorModel(color)
+        const cell = this.getCellData(id)
+
+        const value = array404[row][column]
+
+        if (value) {
+          if (cellType === E_RAW_DATA_MODEL_TYPE.EMPTY) {
+            cell.model = new EmptyModel({ className: value })
+          } else {
+            cell.model = new TextModel({ content: value })
+          }
         }
       },
       process: TRunScenarioProcessFunction = cells => cells.forEach(iteration)
 
     await this.runAnimationScenario(
       scenario,
-      100,
+      50,
       process,
     )
 
-    await this.delayAnimation(500)
+    await this.delayAnimation(1000)
 
     await this.runAnimationScenario(
       scenario,
-      40,
-      cells => cells.forEach(({ column, row }) =>
-        this.clearCell(this.getCellData(getWithShift({ column, row })))),
+      30,
+      cells => cells.forEach(({ column, row }) => {
+        this.clearCell(this.getCellData(getWithShift({ column, row })))
+      })
     )
+
+    await this.place404()
+  }
+
+  private async init() {
+    if (this.isAnimationRun) {
+      this.initWasRequested = true
+      return
+    }
+
+    const { columns, rows } = calculateGridSize(this.viewportSize)
+
+    this.columns = columns
+    this.rows = rows
+    this.isMobile = isMobileMode()
+    this.isPortrait = isPortraitMode()
+
+    this.initGrid()
+
+    while (!this.isAnimationCanceled()) {
+      if (!this.initialAnimationWasShown) {
+        this.initialAnimationWasShown = true
+        await this.delayAnimation(1000)
+        await this.showInitialAnimation()
+      }
+
+      await this.place404()
+    }
   }
 
   @action

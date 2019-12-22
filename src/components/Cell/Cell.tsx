@@ -1,65 +1,62 @@
 import React from 'react'
-import { Properties as TCSSProperties } from 'csstype'
 import styles from './Cell.module.scss'
 import { observer } from 'mobx-react'
 import { useGrid } from '../../contextProviders/GridProvider'
 import classNames from 'classnames'
-import { ColorModel, EmojiModel, HelloEmojiModel, TCellModel, TextModel } from '../../models/cell'
+import { EmojiModel, EmptyModel, TCellModel, TextModel } from '../../models/cell'
+import withClassName from '../../hoc/withClassName'
 
-const CellComponentFactory = observer(({ id }: { id: string }) => {
+const CellFactory = observer(({ id }: { id: string }) => {
   const
     { getCellData } = useGrid(),
     model: TCellModel = getCellData(id).model
 
   let component
 
-  if (model instanceof EmojiModel) {
-    component = <Emoji {...model}/>
+  if (model instanceof EmptyModel) {
+    component = <EmptyWithClassName className={model.className}/>
   }
 
-  if (model instanceof HelloEmojiModel) {
-    component = <HelloEmoji/>
+  if (model instanceof EmojiModel) {
+    component = <EmojiWithClassName content={model.content} className={model.className}/>
   }
 
   if (model instanceof TextModel) {
-    component = <Text {...model}/>
-  }
-
-  if (model instanceof ColorModel) {
-    component = <Color {...model}/>
+    component = <TextWithClassName content={model.content} className={model.className}/>
   }
 
   return (
-    <>
+    <div className={styles.cell}>
       {component}
-    </>
+    </div>
   )
 })
 
-export const Emoji: React.FC<EmojiModel> = ({ content }) => (
-  <div className={classNames(styles.cell, styles.cellEmoji)}>
-    {content}
-  </div>
-)
-
-export const HelloEmoji: React.FC = () => (
-  <div className={classNames(styles.cell, styles.cellEmoji, styles.cellHelloEmoji)}>
-    {HelloEmojiModel.symbol}
-  </div>
-)
-
-export const Text: React.FC<TextModel> = ({ content }) => (
-  <div className={classNames(styles.cell, styles.cellText)}>
-    {content}
-  </div>
-)
-
-export const Color: React.FC<ColorModel> = ({ color }) => {
-  const css: TCSSProperties = {}
-
-  css.background = color
-
-  return <div className={classNames(styles.cell, styles.cellColor)} style={css}/>
+interface ITextProps {
+  content: string
 }
 
-export default CellComponentFactory
+interface IEmojiProps extends ITextProps {
+}
+
+const Empty: React.FC = () => <></>
+
+const EmptyWithClassName = withClassName(Empty)
+
+const Text: React.FC<ITextProps> = ({ content }) => (
+  <div className={classNames(styles.cellText)}>
+    {content}
+  </div>
+)
+
+const TextWithClassName = withClassName(withClassName(Text))
+
+export const Emoji: React.FC<IEmojiProps> = ({ content }) => (
+  <div className={classNames(styles.cellEmoji)}>
+    {content}
+  </div>
+)
+
+const EmojiWithClassName = withClassName(Emoji)
+
+export default CellFactory

@@ -10,7 +10,7 @@ $minCellSize: 40px;
   background: linear-gradient(45deg, #321A4F, #16203A, #103234);
   min-width: 100%;
   min-height: 100%;
-  //overflow: hidden;
+  overflow: hidden;
 }
 
 .grid {
@@ -32,8 +32,8 @@ $minCellSize: 40px;
 
 .col {
   flex: 1;
-  min-width: $minCellSize;
-  min-height: $minCellSize;
+  //min-width: $minCellSize;
+  //min-height: $minCellSize;
   position: relative;
 }
 

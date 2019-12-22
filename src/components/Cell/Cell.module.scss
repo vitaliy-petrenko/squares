@@ -8,11 +8,13 @@ $hello-animation-time: 1400;
 }
 
 .cell {
-  @include overlay;
+  &, & > * {
+    @include overlay;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 @keyframes hello-animation {
@@ -71,7 +73,7 @@ $hello-animation-time: 1400;
 .cellHelloEmoji {
   animation: hello-animation 1ms * $hello-animation-time forwards;
   transform: scale(1) translate3d(0, 0, 0) rotate(0);
-  transform-origin: 48% bottom;
+  transform-origin: 48% 80%;
 }
 
 .cellImage {
@@ -88,4 +90,12 @@ $hello-animation-time: 1400;
 
 .cellMenu {
   background: #561C1A;
+}
+
+.cell404Color1 {
+  background: #2B8288;
+}
+
+.cell404Color2 {
+  background: #5C3091;
 }
