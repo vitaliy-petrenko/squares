@@ -4,6 +4,7 @@ import { computed, observable } from 'mobx'
 
 interface IBaseModelProps {
   className?: string
+  title?: string
 }
 
 interface ITextModelProps extends IBaseModelProps {
@@ -18,14 +19,18 @@ abstract class BaseModel {
   @observable
   className?: string
 
+  @observable
+  title?: string
+
   setClassName(className: string) {
     this.className = className
   }
 
   constructor(props?: IBaseModelProps) {
     if (props) {
-      const { className } = props
+      const { className, title } = props
       this.className = className
+      this.title = title
     }
   }
 }
@@ -85,6 +90,10 @@ export class EmojiModel extends BaseModel {
   }
 }
 
+export class MenuModel extends EmojiModel {
+
+}
+
 export class IconModel extends BaseModel {
 
 }
@@ -93,6 +102,6 @@ export class ImageModel extends BaseModel {
 }
 
 
-export type TCellModel = EmptyModel | EmojiModel | TextModel | IconModel | ImageModel
+export type TCellModel = EmptyModel | EmojiModel | TextModel | IconModel | ImageModel | MenuModel
 
-export enum E_RAW_DATA_MODEL_TYPE { TEXT, EMOJI, EMPTY}
+export enum E_RAW_DATA_MODEL_TYPE { TEXT, EMOJI, EMPTY, MENU}

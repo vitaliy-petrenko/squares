@@ -3,13 +3,13 @@ interface I2DDirectionVector {
   y: 1 | 0 | -1
 }
 
-interface IGridCell {
+interface IMatrixCell {
   column: number
   row: number
 }
 
 interface IFromCellScenarioArguments extends IGridParams {
-  cell: IGridCell
+  cell: IMatrixCell
   vectors: I2DDirectionVector[]
   minColumn?: number
   minRow?: number
@@ -32,10 +32,10 @@ interface IGetMenuPositionArguments extends IGridParams {
   isPortrait: boolean
 }
 
-interface IMenuPosition extends IGridCell {
+interface IMenuPosition extends IMatrixCell {
   vector: I2DDirectionVector
 }
 
-type TGridScenario = Iterable<IGridCell[]>
+type TGridScenario = Iterable<IMatrixCell[]>
 type TStopScenario = true | void
-type TRunScenarioProcessFunction = (cells: IGridCell[]) => TStopScenario
+type TRunScenarioProcessFunction = (cells: IMatrixCell[]) => TStopScenario

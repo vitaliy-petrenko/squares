@@ -3,7 +3,9 @@ import { debounce } from 'lodash'
 import {
   calculateGridSize,
   delay,
+  getMatrixCellWithOffset,
   getMatrixMidPoint,
+  getMatrixSlice,
   getMenuPosition,
   getViewportSize,
   isMobileMode,
@@ -14,8 +16,9 @@ import {
 } from '../helpers/grid'
 import bind from '../decorators/bind'
 import cellStyles from '../components/Cell/Cell.module.scss'
-import { E_RAW_DATA_MODEL_TYPE, EmojiModel, EmptyModel, TCellModel, TextModel } from '../models/cell'
+import { E_RAW_DATA_MODEL_TYPE, EmojiModel, EmptyModel, MenuModel, TCellModel, TextModel } from '../models/cell'
 import { CELL_CLASS_NAMES } from '../constants'
+import { MENU_CONFIG } from '../pagesData'
 
 export enum EViews { initial, application, snake }
 
@@ -46,6 +49,7 @@ export class GridService {
   constructor() {
     this.showInitialAnimation = this.withAnimationDecorator(this.showInitialAnimation)
     this.place404 = this.withAnimationDecorator(this.place404)
+    this.placeMenu = this.withAnimationDecorator(this.placeMenu)
 
     window.addEventListener('resize', debounce(() => {
       this.viewportSize = getViewportSize()
@@ -61,7 +65,7 @@ export class GridService {
   }
 
   @computed
-  get middleCell(): IGridCell {
+  get middleCell(): IMatrixCell {
     return getMatrixMidPoint(this.grid)
   }
 
@@ -78,7 +82,7 @@ export class GridService {
   }
 
   @computed
-  private get pageLeftCornerPosition(): IGridCell {
+  private get pageLeftCornerPosition(): IMatrixCell {
     return {
       column: 0,
       row: 0
@@ -93,10 +97,9 @@ export class GridService {
     this.isAnimationRun = false
 
     if (this.initWasRequested) {
+      this.initWasRequested = false
       this.init()
     }
-
-    this.initWasRequested = false
   }
 
   @bind
@@ -122,7 +125,7 @@ export class GridService {
       const
         scenarioConfig = { columns, rows },
         scenario = makeSpiralScenario(scenarioConfig),
-        iteration = ({ column, row }: IGridCell) => {
+        iteration = ({ column, row }: IMatrixCell) => {
           const
             id = grid[row][column],
             cell = this.getCellData(id)
@@ -161,7 +164,7 @@ export class GridService {
             maxRow: rows - CLEAR_OFFSET,
           },
           scenario = makeFromCellScenario(scenarioConfig),
-          iteration = ({ column, row }: IGridCell) => {
+          iteration = ({ column, row }: IMatrixCell) => {
             const
               id = grid[row][column],
               cell = this.getCellData(id)
@@ -213,7 +216,7 @@ export class GridService {
           ]
         },
         scenario = makeFromCellScenario(scenarioConfig),
-        iteration = ({ column, row }: IGridCell) => {
+        iteration = ({ column, row }: IMatrixCell) => {
           const
             id = grid[row][column],
             cell = this.getCellData(id)
@@ -250,6 +253,37 @@ export class GridService {
     } else if (!cell.model.isClean) {
       cell.model.clear()
     }
+  }
+
+  async placeMenu() {
+    const
+      { column, row, vector } = getMenuPosition({
+        columns: this.columns,
+        rows: this.rows,
+        isMobile: this.isMobile,
+        isPortrait: this.isPortrait,
+      })
+
+    let gridSlice: string[]
+
+    if (vector.x === 1) {
+      gridSlice = getMatrixSlice(this.grid, { column, row }, { column: column + MENU_CONFIG.length, row: row }).flat()
+    } else {
+      gridSlice = getMatrixSlice(this.grid, { column, row }, { column: column, row: row + MENU_CONFIG.length }).flat()
+    }
+
+    for (let i = 0; i < MENU_CONFIG.length; i++) {
+      const { title, link, symbol } = MENU_CONFIG[i]
+
+      const cell = this.getCellData(gridSlice[i])
+
+      if (!cell) return
+
+      cell.model = new MenuModel({ content: symbol, title })
+
+      await this.delayAnimation(140)
+    }
+
   }
 
   async place404() {
@@ -290,8 +324,8 @@ export class GridService {
       columns404 = array404[0].length,
       rows404 = array404.length,
       middleCell = this.middleCell,
-      shiftRow = middleCell.row - getMatrixMidPoint(array404).row,
-      shiftColumn = middleCell.column - getMatrixMidPoint(array404).column,
+      rowOffset = middleCell.row - getMatrixMidPoint(array404).row,
+      columnOffset = middleCell.column - getMatrixMidPoint(array404).column,
       scenarioConfig: IFromCellScenarioArguments = {
         columns: columns404, rows: rows404, cell: { column: 0, row: 0 }, vectors: [
           { x: 0, y: 1 },
@@ -300,21 +334,18 @@ export class GridService {
         ]
       },
       scenario = makeFromCellScenario(scenarioConfig),
-      getWithShift = ({ row, column }: IGridCell): string => {
+      iteration = ({ column: column404, row: row404 }: IMatrixCell) => {
+        const gridCell = getMatrixCellWithOffset(this.grid, { column: column404, row: row404 }, {
+          rowOffset,
+          columnOffset
+        })
+
+        if (!gridCell) return
+
         const
-          cellRow = row + shiftRow,
-          cellColumn = column + shiftColumn
-
-        return this.grid[cellRow] && this.grid[cellRow][cellColumn]
-      },
-      iteration = ({ column, row }: IGridCell) => {
-        const id = getWithShift({ column, row })
-
-        if (!id) return
-
-        const cell = this.getCellData(id)
-
-        const value = array404[row][column]
+          { column, row } = gridCell,
+          cell = this.getCellData(this.grid[row][column]),
+          value = array404[row404][column404]
 
         if (value) {
           if (cellType === E_RAW_DATA_MODEL_TYPE.EMPTY) {
@@ -328,17 +359,21 @@ export class GridService {
 
     await this.runAnimationScenario(
       scenario,
-      50,
+      100,
       process,
     )
 
-    await this.delayAnimation(1000)
+    // await this.delayAnimation(1000)
 
     await this.runAnimationScenario(
       scenario,
-      30,
+      100,
       cells => cells.forEach(({ column, row }) => {
-        this.clearCell(this.getCellData(getWithShift({ column, row })))
+        const gridCell = getMatrixCellWithOffset(this.grid, { column, row }, { rowOffset, columnOffset })
+
+        if (!gridCell) return
+
+        this.clearCell(this.getCellData(this.grid[gridCell.row][gridCell.column]))
       })
     )
 
@@ -359,16 +394,14 @@ export class GridService {
     this.isPortrait = isPortraitMode()
 
     this.initGrid()
-
-    while (!this.isAnimationCanceled()) {
-      if (!this.initialAnimationWasShown) {
-        this.initialAnimationWasShown = true
-        await this.delayAnimation(1000)
-        await this.showInitialAnimation()
-      }
-
-      await this.place404()
+    if (!this.initialAnimationWasShown) {
+      this.initialAnimationWasShown = true
+      // await this.delayAnimation(1000)
+      // await this.showInitialAnimation()
     }
+
+    await this.placeMenu()
+    await this.place404()
   }
 
   @action

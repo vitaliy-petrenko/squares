@@ -62,12 +62,16 @@ $hello-animation-time: 1400;
   }
 }
 
-.cellEmoji {
+@mixin emojiStyle {
   font-size: 26px;
 
   @media screen and (max-width: 500px) {
     font-size: 24px;
   }
+}
+
+.cellEmoji {
+  @include emojiStyle
 }
 
 .cellHelloEmoji {
@@ -89,7 +93,10 @@ $hello-animation-time: 1400;
 }
 
 .cellMenu {
-  background: #561C1A;
+  background: #000;
+  cursor: pointer;
+
+  @include emojiStyle
 }
 
 .cell404Color1 {

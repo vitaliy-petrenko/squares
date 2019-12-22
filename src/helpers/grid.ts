@@ -185,7 +185,7 @@ export const makeFromCellScenario = (
       ),
       yieldedCells = [{ ...cell }],
       getNext = () => {
-        const nextCells: IGridCell[] = []
+        const nextCells: IMatrixCell[] = []
 
         filteredVectors.forEach(vector => {
           previousCells.forEach(({ column, row }) => {
@@ -244,7 +244,6 @@ export const runGridScenario = async (
   if (stopChecker && stopChecker()) return
 
   for await (const cells of scenario) {
-    // console.log(stopChecker && stopChecker())
     if (stopChecker && stopChecker()) {
       break
     }
@@ -295,13 +294,46 @@ export const getMenuPosition =
     }
   }
 
-export const getMatrixMidPoint = <T>(matrix: T[][]): IGridCell => {
+export const getMatrixMidPoint = <T>(matrix: T[][]): IMatrixCell => {
   let
-    row = Math.floor(matrix.length / 2),
-    column = Math.floor(matrix[0].length / 2)
+    row = Math.floor((matrix.length - 1) / 2),
+    column = Math.floor((matrix[0].length - 1) / 2)
 
   return {
     row,
     column
+  }
+}
+
+export const getMatrixSlice = <T>(matrix: T[][], start: IMatrixCell, end?: IMatrixCell): T[][] => {
+  const
+    _start = start,
+    _end = end || { row: matrix.length - 1, column: matrix[0].length - 1 }
+
+  return matrix
+    .filter(
+      (cell, row) => row >= _start.row && row <= _end.row
+    )
+    .map(
+      row => row
+        .filter(
+          (cell, column) => column >= _start.column && column <= _end.column)
+    )
+}
+
+export const getMatrixCellWithOffset = <T>(
+  matrix: T[][],
+  { column, row }: IMatrixCell,
+  { columnOffset, rowOffset }: { columnOffset: number, rowOffset: number }
+): IMatrixCell | null => {
+  const
+    newRow = row + rowOffset,
+    newColumn = column + columnOffset
+
+  if (newRow >= matrix.length || newColumn >= matrix[0].length) return null
+
+  return {
+    column: newColumn,
+    row: newRow,
   }
 }

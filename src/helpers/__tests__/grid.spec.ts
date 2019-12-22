@@ -1,6 +1,9 @@
 import {
   calculateGridSize,
   getFilledMatrix,
+  getMatrixCellWithOffset,
+  getMatrixMidPoint,
+  getMatrixSlice,
   getMenuPosition,
   getMinGridSize,
   makeFromCellScenario,
@@ -186,5 +189,98 @@ describe('menu position helper', () => {
       }
 
     expect(position).toEqual(result)
+  })
+})
+
+describe('matrix midpoint helper', () => {
+  it('zero', () => {
+    const
+      matrix = [
+        [null],
+      ],
+      midPoint = { row: 0, column: 0 }
+
+    expect(getMatrixMidPoint(matrix)).toEqual(midPoint)
+  })
+
+  it('odd', () => {
+    const
+      matrix = [
+        [null, null, null, null],
+        [null, null, null, null],
+        [null, null, null, null],
+        [null, null, null, null],
+      ],
+      midPoint = { row: 1, column: 1 }
+
+    expect(getMatrixMidPoint(matrix)).toEqual(midPoint)
+  })
+
+  it('even', () => {
+    const
+      matrix = [
+        [null, null, null],
+        [null, null, null],
+        [null, null, null],
+      ],
+      midPoint = { row: 1, column: 1 }
+
+    expect(getMatrixMidPoint(matrix)).toEqual(midPoint)
+  })
+})
+
+describe('get cell from matrix with offset', () => {
+  it('positive', () => {
+    expect(
+      getMatrixCellWithOffset([
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+      ], {
+        column: 1,
+        row: 1,
+      }, {
+        columnOffset: 1,
+        rowOffset: 1,
+      })
+    ).toEqual({ column: 2, row: 2 })
+  })
+
+  it('negative', () => {
+    expect(
+      getMatrixCellWithOffset([
+        [1, 2, 3],
+        [1, 2, 3],
+        [1, 2, 3],
+      ], {
+        column: 1,
+        row: 1,
+      }, {
+        columnOffset: 2,
+        rowOffset: 1,
+      })
+    ).toEqual(null)
+  })
+})
+
+describe('get matrix slice', () => {
+  it('positive', () => {
+    expect(
+      getMatrixSlice([
+        [1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5],
+        [1, 2, 3, 4, 5],
+      ], {
+        column: 1,
+        row: 1,
+      }, {
+        column: 3,
+        row: 2,
+      })
+    ).toEqual([
+      [2, 3, 4],
+      [2, 3, 4],
+    ])
   })
 })
